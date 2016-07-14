@@ -1,0 +1,2508 @@
+#%RAML 0.8
+title: Secure64 ReST API Reference (v1)
+baseUri: https://{api_host}/api/{version}
+version: v1
+baseUriParameters:
+  api_host:
+    displayName: host
+    type: string
+    required: true
+mediaType: application/json
+protocols: [HTTPS]
+securedBy: [customHeader]
+
+securitySchemes:
+  - customHeader:
+      type: x-other
+      description: |
+        An `Authorization` header with a base64-encoded value.
+/authdns:
+  /addzone/{zone}/{pattern}:
+    post:
+      is: [restContextAuthorized]
+      description: |
+        Add a new zone to the running server. The zone is added to the zonelist file on disk, so it stays after a restart. The pattern name determines the options for the new zone. For slave zones a zone transfer is immediately attempted. For zones with a zonefile, the zone file is attempted to be read in.
+      responses:
+        200:
+          body:
+            application/json:
+              schema: response
+              example: |
+                {
+                  "code": 200, 
+                  "message": "ok", 
+                  "payload": {
+                    "name": "example.com", 
+                    "pattern": "master", 
+                    "status": "added"
+                  }
+                }
+  /checkconf:
+    get:
+      description: |
+        Checks `nsd.conf` for parser and syntax errors. Returns "ok" if no errors are found. Otherwise, a list of errors is returned. In both cases the HTTP response code is 200.
+      responses:
+        200:
+          
+  /config:
+    get:
+      is: [restContextAuthorized, producesFile]
+      description: Returns the `nsd.conf` file in BIN format.
+    put:
+      is: [restContextAuthorized, consumesFile]
+      description: Places/replaces the `nsd.conf` file on the server. The name of the file being "PUT" must be `nsd.conf`.
+      responses:
+        200:
+          body:
+            application/json:
+              schema: response
+              example: |
+                {
+                  "code": 200,
+                  "message": "ok",
+                  "payload": {
+                    "file": "nsd.conf",
+                    "directory": "/usr/local/s64/authdnsadmin"
+                  }
+                }
+  /delzone/{zone}:
+    post:
+      is: [restContextAuthorized]
+      description: |
+        Remove the zone from the running server. The zone is removed from the zonelist file on disk, from the nsd.db file and from the memory. If it had a zonefile, this remains (but may be outdated). Zones configured inside nsd.conf itself cannot be removed this way because the daemon does not write to the nsd.conf file, you need to add such zones to the zonelist file to be able to delete them with the delzone command.
+      responses:
+        200:
+          body:
+            application/json:
+              schema: response
+              example: |
+                {
+                  "code": 200, 
+                  "message": "ok", 
+                  "payload": {
+                    "name": "example.com", 
+                    "status": "deleted"
+                  }
+                }              
+  /force_transfer:
+    post:
+      is: [restContextAuthorized]
+      description: |
+        Force update slave zones that are hosted on this server. Even if the master hosts the same serial number of the zone, a full AXFR is performed to fetch it. If you want to use IXFR and check that the serial number increases, use the 'transfer' endpoint.
+      responses:
+        200:
+          body:
+            application/json:
+              schema: response
+              example: |
+                {
+                  "code": 200, 
+                  "message": "ok", 
+                  "payload": {
+                    "authdns_force_transfer": "ok, 42 zones"
+                  }
+                }
+        422:
+          body:
+            application/json:
+              schema: response
+              example: |
+                {
+                  "code": 422, 
+                  "message": "error zone example.com not configured", 
+                  "payload": {}
+                }
+    /{zone}:
+      post:
+        is: [restContextAuthorized]
+        description: |
+          Force update slave zones that are hosted on this server. Even if the master hosts the same serial number of the zone, a full AXFR is performed to fetch it. If you want to use IXFR and check that the serial number increases, use the 'transfer' endpoint.
+        responses:
+          200:
+            body:
+              application/json:
+                schema: response
+                example: |
+                  {
+                    "code": 200, 
+                    "message": "ok", 
+                    "payload": {
+                      "authdns_force_transfer": "ok",
+                      "zone": "example.com"
+                    }
+                  }
+          422:
+            body:
+              application/json:
+                schema: response
+                example: |
+                  {
+                    "code": 422, 
+                    "message": "error zone not slave", 
+                    "payload": {}
+                  }
+  /log_reopen:
+    post:
+      is: [restContextAuthorized]
+      description: |
+        Reopen the logfile, for log rotate that wants to move the log file away and create a new logfile.
+      responses:
+        200:
+          body:
+            application/json:
+              schema: response
+              example: |
+                {
+                  "code": 200,
+                  "message": "ok",
+                  "payload": {
+                    "authdns_log_reopen": "ok"
+                  }
+                }              
+  /notify:
+    post:
+      is: [restContextAuthorized]
+      description: |
+        Send NOTIFY messages to slave servers. Sends to the IP addresses configured in the notify: lists for the master zones hosted on this server. Usually AuthDNS sends NOTIFY messages right away when a master zone serial is updated. These slave servers are supposed to initiate a zone transfer request later (to this server or another master), this can be allowed via the provide-xfr: acl list configuration.
+      responses:
+        200:
+          body:
+            application/json:
+              schema: response
+              example: |
+                {
+                  "code": 200, 
+                  "message": "ok", 
+                  "payload": {
+                    "authdns_notify": "ok"
+                  }
+                }
+    /{zone}:
+      post:
+        is: [restContextAuthorized]
+        description: |
+          Send NOTIFY messages to slave servers. Sends to the IP addresses configured in the notify: lists for the master zones hosted on this server. Usually NSD sends NOTIFY messages right away when a master zone serial is updated. Notifies are sent for the given zone. These slave servers are supposed to initiate a zone transfer request later (to this server or another master), this can be allowed via the provide-xfr: acl list configuration.
+        responses:
+          200:
+            body:
+              application/json:
+                schema: response
+                example: |
+                  {
+                    "code": 200, 
+                    "message": "ok", 
+                    "payload": {
+                      "authdns_notify": "ok", 
+                      "zone": "eggs.com"
+                    }
+                  }
+  /reconfig:
+    post:
+      is: [restContextAuthorized]
+      description: |
+        Reload AuthDNS with a fresh read of the `nsd.conf` configuration file.
+      responses:
+        200:
+          body:
+            application/json:
+              schema: response
+              example: |
+                {
+                  "code": 200,
+                  "message": "ok",
+                  "payload": {
+                    "authdns_reconfig": [
+                      "reconfig start, read /usr/local/etc/s64auth/s64authdns.conf", 
+                      "ok"
+                    ]
+                  }
+                }
+  /reload/{zone}:
+    post:
+      is: [restContextAuthorized]
+      description: |
+        Reload zonefiles and reopen logfile. Without  argument  reads changed  zonefiles. Withargumentreads the zonefile for the given zone and loads it.
+      responses:
+        200:
+          body:
+            application/json:
+              schema: response
+              example: |
+                {
+                  "code": 200,
+                  "message": "ok",
+                  "payload": {
+                    "authdns_reload": "ok",
+                    "zone": "example.com"
+                  }
+                }
+  /repattern:
+    post:
+      is: [restContextAuthorized]
+      description: |
+        Reload AuthDNS with a fresh read of the `nsd.conf` configuration file.
+      responses:
+        200:
+          body:
+            application/json:
+              schema: response
+              example: |
+                {
+                  "code": 200,
+                  "message": "ok",
+                  "payload": {
+                    "authdns_repattern": [
+                      "reconfig start, read /usr/local/etc/s64auth/s64authdns.conf", 
+                      "ok"
+                    ]
+                  }
+                }                    
+  /serverpid:
+    get:
+      is: [restContextAuthorized]
+      description: |
+        Returns the PID of the server process. This is used for statistics. This pid is not for sending unix signals, use the pid from s64authdns.pid for that, that pid is also stable.
+      responses:
+        200:
+          body:
+            application/json:
+              schema: response
+              example: |
+                {
+                  "code": 200, 
+                  "message": "ok", 
+                  "payload": {
+                    "authdns_pid": 2045
+                  }
+                }
+  /start:
+    post:
+      is: [restContextAuthorized]
+      description: |
+        Start AuthDNS
+      responses:
+        200:
+          body:
+            application/json:
+              schema: response
+              example: |
+                {
+                  "code": 200,
+                  "message": "ok",
+                  "payload": {
+                    "authdns_start": "ok"
+                  }
+                }  
+  /stats:
+    get:
+      is: [restContextAuthorized]
+      description: |
+        Output a sequence of `name:value` lines with statistics information
+      responses:
+        200:
+          body:
+            application/json:
+              schema: response
+              example: |
+                {
+                  "code": 200, 
+                  "message": "ok", 
+                  "payload": {
+                    "authdns_stats": {
+                      "num.answer_wo_aa": 0, 
+                      "num.class.IN": 0, 
+                      "num.dropped": 0, 
+                      "num.edns": 0, 
+                      "num.ednserr": 0, 
+                      "num.opcode.QUERY": 0, 
+                      "num.queries": 0, 
+                      "num.raxfr": 0, 
+                      "num.rcode.FORMERR": 0, 
+                      "num.rcode.NOERROR": 0, 
+                      "num.rcode.NOTIMP": 0, 
+                      "num.rcode.NXDOMAIN": 0, 
+                      "num.rcode.REFUSED": 0, 
+                      "num.rcode.SERVFAIL": 0, 
+                      "num.rcode.YXDOMAIN": 0, 
+                      "num.rxerr": 0, 
+                      "num.tcp": 0, 
+                      "num.tcp6": 0, 
+                      "num.truncated": 0, 
+                      "num.txerr": 0, 
+                      "num.type.A": 0, 
+                      "num.type.AAAA": 0, 
+                      "num.type.AFSDB": 0, 
+                      "num.type.APL": 0, 
+                      "num.type.CDNSKEY": 0, 
+                      "num.type.CDS": 0, 
+                      "num.type.CERT": 0, 
+                      "num.type.CNAME": 0, 
+                      "num.type.DHCID": 0, 
+                      "num.type.DNAME": 0, 
+                      "num.type.DNSKEY": 0, 
+                      "num.type.DS": 0, 
+                      "num.type.EUI48": 0, 
+                      "num.type.EUI64": 0, 
+                      "num.type.HINFO": 0, 
+                      "num.type.IPSECKEY": 0, 
+                      "num.type.ISDN": 0, 
+                      "num.type.KEY": 0, 
+                      "num.type.KX": 0, 
+                      "num.type.L32": 0, 
+                      "num.type.L64": 0, 
+                      "num.type.LOC": 0, 
+                      "num.type.LP": 0, 
+                      "num.type.MB": 0, 
+                      "num.type.MD": 0, 
+                      "num.type.MF": 0, 
+                      "num.type.MG": 0, 
+                      "num.type.MINFO": 0, 
+                      "num.type.MR": 0, 
+                      "num.type.MX": 0, 
+                      "num.type.NAPTR": 0, 
+                      "num.type.NID": 0, 
+                      "num.type.NS": 0, 
+                      "num.type.NSAP": 0, 
+                      "num.type.NSEC": 0, 
+                      "num.type.NSEC3": 0, 
+                      "num.type.NSEC3PARAM": 0, 
+                      "num.type.NULL": 0, 
+                      "num.type.NXT": 0, 
+                      "num.type.OPT": 0, 
+                      "num.type.PTR": 0, 
+                      "num.type.PX": 0, 
+                      "num.type.RP": 0, 
+                      "num.type.RRSIG": 0, 
+                      "num.type.RT": 0, 
+                      "num.type.SIG": 0, 
+                      "num.type.SOA": 0, 
+                      "num.type.SPF": 0, 
+                      "num.type.SRV": 0, 
+                      "num.type.SSHFP": 0, 
+                      "num.type.TLSA": 0, 
+                      "num.type.TXT": 0, 
+                      "num.type.WKS": 0, 
+                      "num.type.X25": 0, 
+                      "num.udp": 0, 
+                      "num.udp6": 0, 
+                      "server0.queries": 0, 
+                      "size.config.disk": 0, 
+                      "size.config.mem": 1880, 
+                      "size.db.disk": 384, 
+                      "size.db.mem": 5392, 
+                      "size.xfrd.mem": 20989528, 
+                      "time.boot": 85356.006234, 
+                      "time.elapsed": 85356.006234, 
+                      "zone.master": 1, 
+                      "zone.slave": 0
+                    }
+                  }
+                }               
+  /status:
+    get:
+      is: [restContextAuthorized]
+      description: |
+        Returns AuthDNS status.
+      responses:
+        200:
+          body:
+            application/json:
+              schema: reponse
+              example: |
+                {
+                  "code": 200,
+                  "message": "ok",
+                  "payload": {
+                    "authdns_status": {
+                      "ratelimit": 200, 
+                      "verbosity": 1, 
+                      "version": "1.0.0"
+                    }
+                  }
+                }
+  /stop:
+    post:
+      is: [restContextAuthorized]
+      description: |
+        Stop AuthDNS
+      responses:
+        200:
+          body:
+            application/json:
+              schema: response
+              example: |
+                {
+                  "code": 200,
+                  "message": "ok",
+                  "payload": {
+                    "authdns_stop": "ok"
+                  }
+                }                                         
+  /transfer:
+    post:
+      is: [restContextAuthorized]
+      description: |
+        Attempt to update slave zones that are hosted on this server by contacting the masters. The masters are configured via request-xfr: lists. If a zone is given, that zone is updated. Usually AuthDNS receives a NOTIFY from the masters (configured via allow-notify: acl list) that a new zone serial has to be transferred. For zones with no content, AuthDNS may have backed off from asking often because the masters did not respond, but this command will reset the backoff to its initial timeout, for frequent retries.
+      responses:
+        200:
+          body:
+            application/json:
+              schema: response
+              example: |
+                {
+                  "code": 200, 
+                  "message": "ok", 
+                  "payload": {
+                    "authdns_transfer": "ok, 0 zones"
+                  }
+                }
+    /{zone}:
+      post:
+        is: [restContextAuthorized]
+        description: |
+          Attempt to update slave zones that are hosted on this server by contacting the masters. The masters are configured via request-xfr: lists. If a zone is given, that zone is updated. Usually AuthDNS receives a NOTIFY from the masters (configured via allow-notify: acl list) that a new zone serial has to be transferred. For zones with no content, AuthDNS may have backed off from asking often because the masters did not respond, but this command will reset the backoff to its initial timeout, for frequent retries.
+        responses:
+          200:
+            body:
+              application/json:
+                schema: response
+                example: |
+                  {
+                    "code": 200, 
+                    "message": "ok", 
+                    "payload": {
+                      "authdns_transfer": "ok",
+                      "zone": "example.com"
+                    }
+                  }
+          422:
+            body:
+              application/json:
+                schema: response
+                example: |
+                  {
+                    "code": 422, 
+                    "message": "error zone not slave", 
+                    "payload": {}
+                  }
+  /verbosity:
+    get:
+      is: [restContextAuthorized]
+      description: |
+        Returns the logging level of AuthDNS
+      responses:
+        200:
+          body:
+            application/json:
+              schema: response
+              example: |
+                {
+                  "code": 200, 
+                  "message": "ok", 
+                  "payload": {
+                    "authdns_verbosity": 1
+                  }
+                }
+    /{verbosity}:
+      displayName: version
+      uriParameters:
+        verbosity:
+          type: integer
+      post:
+        is: [restContextAuthorized]
+        description: |
+            Sets the logging level of AuthDNS
+        responses:
+          200:
+            body:
+              application/json:
+                schema: response
+                example: |
+                  {
+                    "code": 200, 
+                    "message": "ok", 
+                    "payload": {
+                      "authdns_verbosity": "ok", 
+                      "verbosity": 1
+                    }
+                  }
+  /write:
+    post:
+      is: [restContextAuthorized]
+      description: |
+        Write zonefiles to disk, or the given zonefile to disk. Zones that have changed (via AXFR or IXFR) are written, or if the zonefile has not been created yet then it is created. Directory components of the zonefile path are created if necessary.
+      responses:
+        200:
+          body:
+            application/json:
+              schema: response
+              example: |
+                {
+                  "code": 200, 
+                  "message": "ok", 
+                  "payload": {
+                    "authdns_write": "ok"
+                  }
+                }
+    /{zone}:
+      post:
+        is: [restContextAuthorized]
+        description: |
+          Write zonefiles to disk, or the given zonefile to disk. Zones that have changed (via AXFR or IXFR) are written, or if the zonefile has not been created yet then it is created. Directory components of the zonefile path are created if necessary.
+        responses:
+          200:
+            body:
+              application/json:
+                schema: response
+                example: |
+                  {
+                    "code": 200, 
+                    "message": "ok", 
+                    "payload": {
+                      "authdns_write": "ok", 
+                      "zone": "example.com"
+                    }
+                  }
+          422:
+            body:
+              application/json:
+                schema: response
+                example: |
+                  {
+                    "code": 422, 
+                    "message": "error zone example.com not configured", 
+                    "payload": {}
+                  }
+  /zonefile:
+    put:
+      is: [restContextAuthorized, consumesFile, pathInQuery]
+      description: |
+        Places a zone file on the server. The file is placed in `/usr/local/s64/authdnsadmin`. Optionally, if `dir` is suppliedas a GET parameter, the server will attempt to place the file in dir relative to `/usr/local/s64/authdnsdmin`.
+      responses:
+        200:
+          body:
+            application/json:
+              schema: response
+              example: |
+                {
+                  "code": 200, 
+                  "message": "ok", 
+                  "payload": {
+                    "directory": "/usr/local/s64/authdnsadmin/zones", 
+                    "file": "spam.com.zone"
+                  }
+                }
+    /{filename}:
+      get:
+        is: [restContextAuthorized, producesFile, pathInQuery]
+        description: |
+          Returns `filename` in BIN format. The file must have a `.zone` or `.signed` extension. 
+      delete:
+        is: [restContextAuthorized, consumesFile, pathInQuery]
+        description: |
+          Permanently delete a zone file  
+        responses:
+          200:
+            body:
+              application/json:
+                schema: response
+                example: |
+                  {
+                    "code": 200, 
+                    "message": "ok", 
+                    "payload": {
+                      "delete_zonefile": {
+                        "directory": "/usr/local/s64/authdnsadmin", 
+                        "file": "spam.com.zone.zone"
+                      }
+                    }
+                  }         
+  /zonestatus:
+    get:
+      is: [restContextAuthorized]
+      description: |
+        Get state of the zone, the serial numbers and since when they have been acquired. Also prints the notify action (to which server), and zone transfer (and from which master) if there is activity right now. The state of the zone is printed as 'master' (master zones), 'ok' (slave zone is up-to-date), 'expired' (slave zone has expired), 'refreshing' (slave zone has transfers active). The serial numbers printed are the 'served-serial' (currently active), the 'commit-serial' (is in reload), the 'notified-serial' (got notify, busy fetching the data). The serial numbers are only printed if such a serial number is available.
+      responses:
+        200:
+          body:
+            application/json:
+              schema: response
+              example: |
+                {
+                  "code": 200, 
+                  "message": "ok", 
+                  "payload": {
+                    "count": 2, 
+                    "zones": [
+                      {
+                        "state": "master", 
+                        "zone": "eggs.com"
+                      }, 
+                      {
+                        "pattern": "master", 
+                        "state": "master", 
+                        "zone": "spam.com"
+                      }
+                    ]
+                  }
+                }
+    /{zone}:
+      get:
+        is: [restContextAuthorized]
+        description: |
+          Get state of the zone, the serial numbers and since when they have been acquired. Also prints the notify action (to which server), and zone transfer (and from which master) if there is activity right now. The state of the zone is printed as 'master' (master zones), 'ok' (slave zone is up-to-date), 'expired' (slave zone has expired), 'refreshing' (slave zone has transfers active). The serial numbers printed are the 'served-serial' (currently active), the 'commit-serial' (is in reload), the 'notified-serial' (got notify, busy fetching the data). The serial numbers are only printed if such a serial number is available.
+        responses:
+          200:
+            body:
+              application/json:
+                schema: response
+                example: |
+                  {
+                    "code": 200, 
+                    "message": "ok", 
+                    "payload": {
+                      "count": 1, 
+                      "zones": [
+                        {
+                          "pattern": "master", 
+                          "state": "master", 
+                          "zone": "spam.com"
+                        }
+                      ]
+                    }
+                  }
+
+  description: |
+    AuthDNS resources interact with an authoritative Secure64 DNS server.
+/cachedns:
+  # Implement anchor
+        
+  # Implement checkconf
+  /checkconf:
+    get:
+      is: [restContextAuthorized]
+      description: |
+        Check CacheDNS configuration file for errors.
+      queryParameters:
+        option:
+          displayName: option
+          required: false
+          type: string
+      responses:
+        200:
+          body:
+            application/json:
+              schema: response
+  /config:
+    get:
+      is: [restContextAuthorized, producesFile]
+      description: |
+        Returns the `cache.conf` on disk in BIN format.
+    put:
+      is: [restContextAuthorized, consumesFile]
+      description: |
+        Places/replaces the `cache.conf` file on the server. The name of the file being "PUT" must be `cache.conf`.
+      responses:
+        200:
+          body:
+            application/json:
+              schema: response
+              example: |
+                {
+                  "code": 200,
+                  "message": "ok",
+                  "payload": {
+                    "file": "cache.conf",
+                    "directory": "/usr/local/s64/cachednsadmin"
+                  }
+                }
+  /dump_cache:
+    get:
+      is: [restContextAuthorized]
+      description: |
+        Returns the contents of the cache.
+      responses:
+        200:
+          body:
+            application/json:
+              schema: response
+              example: |
+                {
+                  "code": 200, 
+                  "message": "ok", 
+                  "payload": {
+                    "dump_cache": [
+                      "START_RRSET_CACHE", 
+                      ";rrset 86396 1 0 1 0", 
+                      "a2.gtld-servers.net.\t172796\tIN\tAAAA\t2001:503:a83e::2:31", 
+                      ";rrset 86396 1 0 1 0", 
+                      "a2.gtld-servers.net.\t172796\tIN\tA\t192.5.6.31", 
+                      ";rrset 86396 1 0 1 0", 
+                      "c2.gtld-servers.net.\t172796\tIN\tAAAA\t2001:503:83eb::2:31", 
+                      ";rrset 86396 1 0 1 0", 
+                      "c2.gtld-servers.net.\t172796\tIN\tA\t192.26.92.31", 
+                      ";rrset 86396 1 0 1 0", 
+                      "f2.gtld-servers.net.\t172796\tIN\tA\t192.35.51.31", 
+                      ";rrset 86396 1 0 1 0", 
+                      "g2.gtld-servers.net.\t172796\tIN\tA\t192.42.93.31", 
+                      ";rrset 86396 1 0 1 0", 
+                      "h2.gtld-servers.net.\t172796\tIN\tA\t192.54.112.31", 
+                      ";rrset 86396 8 0 2 0", 
+                      "gtld-servers.net.\t172796\tIN\tNS\ta2.gtld-servers.net.", 
+                      "gtld-servers.net.\t172796\tIN\tNS\tc2.gtld-servers.net.", 
+                      "gtld-servers.net.\t172796\tIN\tNS\td2.gtld-servers.net.", 
+                      "gtld-servers.net.\t172796\tIN\tNS\te2.gtld-servers.net.", 
+                      "gtld-servers.net.\t172796\tIN\tNS\tf2.gtld-servers.net.", 
+                      "gtld-servers.net.\t172796\tIN\tNS\tg2.gtld-servers.net.", 
+                      "gtld-servers.net.\t172796\tIN\tNS\th2.gtld-servers.net.", 
+                      "gtld-servers.net.\t172796\tIN\tNS\tl2.gtld-servers.net.", 
+                      ";rrset 86396 1 0 1 0", 
+                      "l.gtld-servers.net.\t172796\tIN\tA\t192.41.162.30", 
+                      ";rrset 86396 1 0 1 0", 
+                      "j.gtld-servers.net.\t172796\tIN\tA\t192.48.79.30",
+                      ";rrset 596 1 1 7 0", 
+                      "6lotvcs0c3jsgpe69lid1ifpjklii6f4.secure64.com.\t596\tIN\tNSEC3\t1 1 150 F10E32 6lrnirdukbs61dpsch9eomstoj5qf6n5 A RRSIG ;{flags: optout}", 
+                      "6lotvcs0c3jsgpe69lid1ifpjklii6f4.secure64.com.\t596\tIN\tRRSIG\tNSEC3 7 3 600 20150625090050 20150618080050 61824 secure64.com. ArkOl7CtMWiFgFZbIfk4xFP9qHkGPfIs8AUURBPUR6pLNLzWii9jwWFgP/Kwh5MgGCBMVk0gn+aWh6K4zxYkkFB2nLAxgXONgOJYAKQYoN4/NU/L85q4/XwcdqXibR781y8iczHevFPk/3pfey7ZHaVMkZEnYvw3sZ3RSTX8Ub4= ;{id = 61824}", 
+                      ";rrset 3596 1 1 3 2", 
+                      "ns2.secure64.com.\t3596\tIN\tA\t216.17.193.194", 
+                      "ns2.secure64.com.\t3596\tIN\tRRSIG\tA 7 3 3600 20150625090050 20150618080050 61824 secure64.com. d1DmmmnaWDHKo6S5b6kD7urSM3PIRjJt74Eu48iDwVUiQaEmOucnMcMPu0wqpqwaXlFWyUlU/d3sbbhCsenFJyIznF/cOX+n78BY2LhQjObUQmvUvT2zLoweq4aX5O2PoHZaOeuI1t0MYD0aaf7HJGFiN0IJ6YDF7FMKpIxUulw= ;{id = 61824}", 
+                      ";rrset 3596 1 1 8 2", 
+                      "www.secure64.com.\t3596\tIN\tA\t66.94.38.220", 
+                      "www.secure64.com.\t3596\tIN\tRRSIG\tA 7 3 3600 20150625090050 20150618080050 61824 secure64.com. V2I4tBfYmUa/ZP53ma2Bq4TYgD98ek7MMkxeEsdTGmanXc7dSkfKjDtM+VETmObrYnu9+WClSIuaVdpsUUJp1nOsLWYZY2W4wBxaVN5k5iDbTZlTD8Kr+1Wv+F+II9FM3wVOYaY9k2g0Hkxh9abU5GMzI2kdfwIKDvxQl+1gOIU= ;{id = 61824}", 
+                      ";rrset 86396 2 1 2 0", 
+                      "secure64.com.\t86396\tIN\tDS\t15570 7 1 8FF3EBAD7A6CA3E1023DE05394EDE4FBE524FE5B", 
+                      "END_RRSET_CACHE", 
+                      "START_MSG_CACHE", 
+                      "msg h.gtld-servers.net. IN AAAA 32896 1 86396 0 0 1 0", 
+                      "gtld-servers.net. IN SOA 4", 
+                      "msg l2.gtld-servers.net. IN AAAA 32896 1 86396 0 0 1 0", 
+                      "gtld-servers.net. IN SOA 4", 
+                      "msg c.gtld-servers.net. IN AAAA 32896 1 86396 0 0 1 0", 
+                      "gtld-servers.net. IN SOA 4",
+                      "msg h2.gtld-servers.net. IN AAAA 32896 1 86396 0 0 1 0", 
+                      "gtld-servers.net. IN SOA 4", 
+                      "msg ns1.secure64.com. IN AAAA 32896 1 596 0 0 2 0", 
+                      "secure64.com. IN SOA 4", 
+                      "gr381n3daoua8gmpgff6hv9lff82jgci.secure64.com. IN NSEC3 0", 
+                      "msg e.root-servers.net. IN AAAA 32896 1 86395 0 0 1 0", 
+                      "root-servers.net. IN SOA 4", 
+                      "msg . IN NS 32896 1 86395 0 1 0 24", 
+                      ". IN NS 0", 
+                      "a.root-servers.net. IN A 0", 
+                      "b.root-servers.net. IN A 0", 
+                      "c.root-servers.net. IN A 0", 
+                      "d.root-servers.net. IN A 0", 
+                      "e.root-servers.net. IN A 0", 
+                      "f.root-servers.net. IN A 0", 
+                      "g.root-servers.net. IN A 0", 
+                      "h.root-servers.net. IN A 0", 
+                      "i.root-servers.net. IN A 0", 
+                      "j.root-servers.net. IN A 0", 
+                      "k.root-servers.net. IN A 0", 
+                      "l.root-servers.net. IN A 0", 
+                      "m.root-servers.net. IN A 0", 
+                      "a.root-servers.net. IN AAAA 0", 
+                      "b.root-servers.net. IN AAAA 0", 
+                      "c.root-servers.net. IN AAAA 0", 
+                      "d.root-servers.net. IN AAAA 0", 
+                      "f.root-servers.net. IN AAAA 0", 
+                      "h.root-servers.net. IN AAAA 0", 
+                      "i.root-servers.net. IN AAAA 0", 
+                      "j.root-servers.net. IN AAAA 0", 
+                      "k.root-servers.net. IN AAAA 0", 
+                      "l.root-servers.net. IN AAAA 0", 
+                      "m.root-servers.net. IN AAAA 0", 
+                      "END_MSG_CACHE", 
+                      "EOF"
+                    ]
+                  }
+                }
+  /dump_infra:
+    get:
+      is: [restContextAuthorized]
+      description: |
+        Return the contents of the infra cache.
+      responses:
+        200:
+          body:
+            application/json:
+              schema: response
+              example: |
+                {
+                  "code": 200, 
+                  "message": "ok", 
+                  "payload": {
+                    "dump_infra": [
+                      "216.17.193.194 secure64.com. ttl 891 ping 1 var 74 rtt 297 rto 297 tA 0 tAAAA 0 tother 0 ednsknown 1 edns 0 delay 0 lame dnssec 0 rec 0 A 0 other 0"
+                    ]
+                  }
+                }
+  /dump_requestlist:
+    get:
+      is: [restContextAuthorized]
+      description: |
+        Show what is worked on.  Returns all queries that the  server  is currently  working  on.   Returns  the  time that users have been waiting.  For internal requests, no time is returned.   And  then returns  out the module status.  This returns the queries from the first thread, and not queries that are being serviced from other threads.
+      responses:
+        200:
+          body:
+            application/json:
+              schema: response
+              example: |
+                {
+                  "code": 200, 
+                  "message": "ok", 
+                  "payload": {
+                    "dump_requestlist": [
+                      "thread #0", 
+                      "#   type cl name    seconds    module status"
+                    ]
+                  }
+                }
+  /flush/{name}:
+    post:
+      is: [restContextAuthorized]
+      description: |
+        Remove  the  name from the cache. Removes the types A, AAAA, NS, SOA, CNAME, DNAME, MX, PTR, SRV and NAPTR. Because that is fast to  do.  Other  record  types can be removed using `flush_type` or `flush_zone`.
+      responses:
+        200:
+          body:
+            application/json:
+              schema: response
+              example: |
+                {
+                  "code": 200, 
+                  "message": "ok", 
+                  "payload": {
+                    "flush": {
+                      "name": "secure64.com", 
+                      "output": "ok"
+                    }
+                  }
+                }
+  /flush_bogus:
+    post:
+      is: [restContextAuthorized]
+      description: |
+        Remove all bogus data from the cache.
+      responses:
+        200:
+          body:
+            application/json:
+              schema: response
+              example: |
+                {
+                  "code": 200, 
+                  "message": "ok", 
+                  "payload": {
+                    "flush_bogus": "ok removed 0 rrsets, 0 messages and 0 key entries"
+                  }
+                }
+  /flush_infra/all:
+    post:
+      is: [restContextAuthorized]
+      description: |
+        The entire  infra cache is emptied. It contains EDNS, ping and lameness data.
+      responses:
+        200:
+          body:
+            application/json:
+              schema: response
+              example: |
+                {
+                  "code": 200, 
+                  "message": "ok", 
+                  "payload": {
+                    "flush_infra": {
+                      "output": "ok", 
+                      "scope": "all"
+                    }
+                  }
+                }
+  /flush_infra/{address}:
+    post:
+      is: [restContextAuthorized]
+      description: |
+        The entire  infra cache is emptied. It contains EDNS, ping and lameness data.
+      responses:
+        200:
+          body:
+            application/json:
+              schema: response
+              example: |
+                {
+                  "code": 200, 
+                  "message": "ok", 
+                  "payload": {
+                    "flush_infra": {
+                      "output": "ok", 
+                      "scope": "192.168.86.1"
+                    }
+                  }
+                }
+  /flush_negative:
+    post:
+      is: [restContextAuthorized]
+      description: |
+        Remove  all  negative  data  from  the  cache.  This is nxdomain answers, nodata answers and servfail answers.  Also removes  bad key  entries  (which  could  be  due to failed lookups) from the dnssec key cache, and iterator last-resort lookup failures  from the rrset cache.
+      responses:
+        200:
+          body:
+            application/json:
+              schema: response
+              example: |
+                {
+                  "code": 200, 
+                  "message": "ok", 
+                  "payload": {
+                    "flush_negative": "ok removed 0 rrsets, 18 messages and 0 key entries"
+                  }
+                }
+  /flush_requestlist:
+    post:
+      is: [restContextAuthorized]
+      description: |
+        Drop  the  queries  that  are  worked  on.  Stops working on the queries that the server is working on now.  The cache  is  unaffected.   No  reply  is  sent for those queries, probably making those users request again later.   Useful  to  make  the  server restart  working  on queries with new settings, such as a higher verbosity level.
+      responses:
+        200:
+          body:
+            application/json:
+              schema: response
+              example: |
+                {
+                  "code": 200, 
+                  "message": "ok", 
+                  "payload": {
+                    "flush_requestlist": "ok"
+                  }
+                }
+  /flush_stats:
+    post:
+      is: [restContextAuthorized]
+      description: |
+        Reset statistics to zero.
+      responses:
+        200:
+          body:
+            application/json:
+              schema: response
+              example: |
+                {
+                  "code": 200, 
+                  "message": "ok", 
+                  "payload": {
+                    "flush_stats": "ok"
+                  }
+                }
+  /flush_type/{name}/{type}:
+    post:
+      is: [restContextAuthorized]
+      description: |
+        Remove the name, type information from the cache.
+      responses:
+        200:
+          body:
+            application/json:
+              schema: response
+              example: |
+                {
+                  "code": 200, 
+                  "message": "ok", 
+                  "payload": {
+                    "flush_type": {
+                      "name": "secure64.com", 
+                      "output": "ok", 
+                      "type": "AAAA"
+                    }
+                  }
+                }
+  /flush_zone/{name}:
+    post:
+      is: [restContextAuthorized]
+      description: |
+        Remove all information at or below the name from the cache.  The rrsets  and  key entries are removed so that new lookups will be performed.  This needs to walk and inspect the entire cache, and is a slow operation.
+      responses:
+        200:
+          body:
+            application/json:
+              schema: response
+              example: |
+                {
+                  "code": 200, 
+                  "message": "ok", 
+                  "payload": {
+                    "flush_zone": {
+                      "name": "secure64.com", 
+                      "output": "ok removed 4 rrsets, 1 messages and 0 key entries"
+                    }
+                  }
+                }
+  /forward:
+    get:
+      is: [restContextAuthorized]
+      description: |
+        Returns the current list of addresses used to  forward all  queries  to  is  printed.  On startup this is from the forward-zone "." configuration.  Afterwards it  shows  the  status. It prints off when no forwarding is used.
+      responses:
+        200:
+          body:
+            application/json:
+              schema: response
+              example: |
+                {
+                  "code": 200, 
+                  "message": "ok", 
+                  "payload": {
+                    "cachedns_forward": [
+                      "10.0.0.3", 
+                      "10.0.0.2", 
+                      "10.0.0.1"
+                    ]
+                  }
+                }
+    /off:
+      post:
+        is: [restContextAuthorized]
+        description: |
+          Setup  forwarding  mode.   Configures  if  the server should ask other upstream nameservers, should go to the internet root nameservers  itself, or show the current config.  You could pass the nameservers after a DHCP update.
+
+          Without arguments the current list of addresses used to  forward all  queries  to  is  printed.  On startup this is from the forward-zone "." configuration.  Afterwards it  shows  the  status.  It returns off when no forwarding is used.
+
+          If  `off`, forwarding  is disabled and the root nameservers are used.  This can be used to avoid to avoid  buggy  or non-DNSSEC  supporting  nameservers returned from DHCP.  But may not work in hotels or hotspots.
+          
+          By  default  the  forwarder information from the config file for the root "." is used.  The config file is not changed, so  after a  reload  these changes are gone.  Other forward zones from the config file are not affected by this command.
+        responses:
+          200:
+            body:
+              application/json:
+                schema: response
+                example: |
+                  {
+                    "code": 200, 
+                    "message": "ok", 
+                    "payload": {
+                      "cachedns_forward": "off"
+                    }
+                  }
+    /{IPs}:
+      uriParameters:
+        IPs:
+          type: string
+          description: |
+            One or more IP addresses, delimited by forward slashes ('/').
+            Example: `/forward/10.0.0.2/10.0.0.3/10.0.0.4`
+      post:
+        is: [restContextAuthorized]
+        description: |
+          Setup  forwarding  mode.   Configures  if  the server should ask other upstream nameservers, should go to the internet root nameservers  itself, or show the current config.  You could pass the nameservers after a DHCP update.
+
+          Without arguments the current list of addresses used to  forward all  queries  to  is  printed.  On startup this is from the forward-zone "." configuration.  Afterwards it  shows  the  status.  It returns off when no forwarding is used.
+          
+          If one or more IPv4 or IPv6 addresses are given, those are  then used  to  forward  queries  to.
+
+          By  default  the  forwarder information from the config file for the root "." is used.  The config file is not changed, so  after a  reload  these changes are gone.  Other forward zones from the config file are not affected by this command.
+        responses:
+          200:
+            body:
+              application/json:
+                schema: response
+                example: |
+                  {
+                    "code": 200, 
+                    "message": "ok", 
+                    "payload": {
+                      "cachedns_forward": {
+                        "addresses": [
+                          "10.0.0.1", 
+                          "10.0.0.2", 
+                          "10.0.0.3"
+                        ], 
+                        "output": "ok"
+                      }
+                    }
+                  }
+  /forward_add/{zone}/{address}:
+    post:
+      is: [restContextAuthorized]
+      description: |
+        Add  a new forward zone to running unbound.  With `insecure=true` query parameter also adds a `domain-insecure` for the zone (so  it  can  resolve  insecurely  if  you  have  a DNSSEC root trust anchor configured for other names).  The addr can be IP4,  IP6  or  nameserver  names, like forward-zone config in cache.conf.
+      queryParameters:
+        insecure:
+          displayName: insecure
+          required: false
+          type: string
+          default: "false"
+      responses:
+        200:
+          body:
+            application/json:
+              schema: response
+              example: |
+                {
+                  "code": 200, 
+                  "message": "ok", 
+                  "payload": {
+                    "forward_add": {
+                      "address": [
+                        "192.168.64.1", 
+                        "192.168.64.2"
+                      ], 
+                      "insecure": true, 
+                      "return": "ok", 
+                      "zone": "secure64.com"
+                    }
+                  }
+                
+  /forward_remove/{zone}:
+    post:
+      is: [restContextAuthorized]
+      description: |
+        Remove a forward zone from running unbound.  The `insecure=true` query parmeter also removes a domain-insecure for the zone.
+      queryParameters:
+        insecure:
+          displayName: insecure
+          required: false
+          type: string
+          default: "false"
+      responses:
+        200:
+          body:
+            application/json:
+              schema: response
+              example: |
+                {
+                  "code": 200, 
+                  "message": "ok", 
+                  "payload": {
+                    "forward_remove": {
+                      "insecure": false
+                      "output": "ok", 
+                      "zone": "secure64.com"
+                    }
+                  }
+                }
+  /get_option/{opt}:
+    get:
+      is: [restContextAuthorized]
+      description: |
+        Get the value of the option.  Give the  option  name  without  a trailing  ':'.  The value is returned.  If the value is "", nothing is returned.  On error 'error  ...' some options a list of values, one on  each  line,  is  returned. The  options  are  shown  from  the config file as modified with set_option.  For some options an override may  have  been  taken that  does  not show up with this command, not results from e.g. the verbosity and forward control  commands.   Not  all  options work,   see   list_stubs,  list_forwards,  list_local_zones  and list_local_data for those.
+      responses:
+        200:
+          body:
+            application/json:
+              schema: response
+              example: |
+                {
+                  "code": 200, 
+                  "message": "ok", 
+                  "payload": {
+                    "get_option": {
+                      "option": "port", 
+                      "output": [
+                        "53"
+                      ]
+                    }
+                  }
+                }
+  /insecure_add/{zone}:
+    post:
+      is: [restContextAuthorized]
+      description: |
+        Add a `domain-insecure` for the given zone, like the statement  in cache.conf.  Adds to the running cachedns without affecting the cache contents (which may still  be  bogus, use  flush_zone  to remove it), does not affect the config file.
+      responses:
+        200:
+          body:
+            application/json:
+              schema: response
+              example: |
+                {
+                  "code": 200, 
+                  "message": "ok", 
+                  "payload": {
+                    "insecure_add": {
+                      "output": "ok", 
+                      "zone": "secure64.com"
+                    }
+                  }
+                }
+  /insecure_remove/{zone}:
+    post:
+      is: [restContextAuthorized]
+      description: |
+        Removes domain-insecure for the given zone.
+      responses:
+        200:
+          body:
+            application/json:
+              schema: response
+              example: |
+                {
+                  "code": 200, 
+                  "message": "ok", 
+                  "payload": {
+                    "insecure_remove": {
+                      "output": "ok", 
+                      "zone": "secure64.com"
+                    }
+                  }
+                }
+  /list_forwards:
+    get:
+      is: [restContextAuthorized]
+      description: |
+        List  the  forward zones in use.  These are printed zone by zone to the output.
+      responses:
+        200:
+          body:
+            application/json:
+              schema: response
+              example: |
+                {
+                  "code": 200, 
+                  "message": "ok", 
+                  "payload": {
+                    "list_forwards": [
+                      "secure64.com. IN forward 192.168.86.1"
+                    ]
+                  }
+                }
+  /list_local_data:
+    get:
+      is: [restContextAuthorized]
+      description: |
+        Return  the  local  data  RRs  in  use. The resource records are printed.
+      responses:
+        200:
+          body:
+            application/json:
+              schema: response
+              example: |
+                {
+                  "code": 200, 
+                  "message": "ok", 
+                  "payload": {
+                    "list_local_data": [
+                      "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.ip6.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.ip6.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "1.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.ip6.arpa.\t10800\tIN\tPTR\tlocalhost.", 
+                      "1.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.ip6.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "1.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.ip6.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "8.b.d.0.1.0.0.2.ip6.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "8.b.d.0.1.0.0.2.ip6.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "d.f.ip6.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "d.f.ip6.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "8.e.f.ip6.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "8.e.f.ip6.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "9.e.f.ip6.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "9.e.f.ip6.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "a.e.f.ip6.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "a.e.f.ip6.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "b.e.f.ip6.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "b.e.f.ip6.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "0.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "0.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "10.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "10.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "64.100.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "64.100.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "65.100.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "65.100.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "66.100.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "66.100.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "67.100.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "67.100.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "68.100.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "68.100.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "69.100.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "69.100.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "70.100.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "70.100.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "71.100.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "71.100.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "72.100.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "72.100.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "73.100.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "73.100.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "74.100.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "74.100.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "75.100.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "75.100.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "76.100.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "76.100.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "77.100.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "77.100.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "78.100.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "78.100.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "79.100.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "79.100.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "80.100.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "80.100.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "81.100.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "81.100.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "82.100.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "82.100.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "83.100.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "83.100.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "84.100.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "84.100.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "85.100.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "85.100.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "86.100.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "86.100.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "87.100.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "87.100.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "88.100.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "88.100.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "89.100.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "89.100.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "90.100.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "90.100.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "91.100.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "91.100.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "92.100.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "92.100.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "93.100.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "93.100.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "94.100.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "94.100.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "95.100.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "95.100.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "96.100.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "96.100.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "97.100.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "97.100.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "98.100.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "98.100.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "99.100.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "99.100.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "100.100.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "100.100.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "101.100.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "101.100.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "102.100.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "102.100.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "103.100.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "103.100.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "104.100.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "104.100.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "105.100.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "105.100.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "106.100.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "106.100.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "107.100.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "107.100.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "108.100.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "108.100.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "109.100.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "109.100.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "110.100.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "110.100.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "111.100.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "111.100.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "112.100.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "112.100.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "113.100.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "113.100.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "114.100.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "114.100.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "115.100.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "115.100.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "116.100.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "116.100.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "117.100.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "117.100.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "118.100.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "118.100.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "119.100.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "119.100.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "120.100.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "120.100.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "121.100.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "121.100.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "122.100.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "122.100.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "123.100.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "123.100.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "124.100.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "124.100.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "125.100.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "125.100.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "126.100.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "126.100.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "127.100.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "127.100.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "127.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "127.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "1.0.0.127.in-addr.arpa.\t10800\tIN\tPTR\tlocalhost.", 
+                      "254.169.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "254.169.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "16.172.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "16.172.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "17.172.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "17.172.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "18.172.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "18.172.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "19.172.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "19.172.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "20.172.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "20.172.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "21.172.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "21.172.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "22.172.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "22.172.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "23.172.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "23.172.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "24.172.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "24.172.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "25.172.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "25.172.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "26.172.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "26.172.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "27.172.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "27.172.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "28.172.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "28.172.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "29.172.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "29.172.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "30.172.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "30.172.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "31.172.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "31.172.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "2.0.192.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "2.0.192.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "168.192.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "168.192.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "100.51.198.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "100.51.198.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "113.0.203.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "113.0.203.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "255.255.255.255.in-addr.arpa.\t10800\tIN\tNS\tlocalhost.", 
+                      "255.255.255.255.in-addr.arpa.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "localhost.\t10800\tIN\tAAAA\t::1", 
+                      "localhost.\t10800\tIN\tA\t127.0.0.1", 
+                      "localhost.\t10800\tIN\tSOA\tlocalhost. nobody.invalid. 1 3600 1200 604800 10800", 
+                      "localhost.\t10800\tIN\tNS\tlocalhost."
+                    ]
+                  }
+                }
+  /list_local_zones:
+    get:
+      is: [restContextAuthorized]
+      description: |
+        List the local zones in use.  These are  printed  one  per  line with zone type.
+      responses:
+        200:
+          body:
+            application/json:
+              schema: response
+              example: |
+                {
+                  "code": 200, 
+                  "message": "ok", 
+                  "payload": {
+                    "list_local_zones": [ 
+                      "secur64.com. static", 
+                      "0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.ip6.arpa. static", 
+                      "1.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.ip6.arpa. static", 
+                      "8.b.d.0.1.0.0.2.ip6.arpa. static", 
+                      "d.f.ip6.arpa. static", 
+                      "8.e.f.ip6.arpa. static", 
+                      "9.e.f.ip6.arpa. static", 
+                      "a.e.f.ip6.arpa. static", 
+                      "b.e.f.ip6.arpa. static", 
+                      "0.in-addr.arpa. static", 
+                      "10.in-addr.arpa. static", 
+                      "64.100.in-addr.arpa. static", 
+                      "65.100.in-addr.arpa. static", 
+                      "66.100.in-addr.arpa. static", 
+                      "67.100.in-addr.arpa. static", 
+                      "68.100.in-addr.arpa. static", 
+                      "69.100.in-addr.arpa. static", 
+                      "70.100.in-addr.arpa. static", 
+                      "71.100.in-addr.arpa. static", 
+                      "72.100.in-addr.arpa. static", 
+                      "73.100.in-addr.arpa. static", 
+                      "74.100.in-addr.arpa. static", 
+                      "75.100.in-addr.arpa. static", 
+                      "76.100.in-addr.arpa. static", 
+                      "77.100.in-addr.arpa. static", 
+                      "78.100.in-addr.arpa. static", 
+                      "79.100.in-addr.arpa. static", 
+                      "80.100.in-addr.arpa. static", 
+                      "81.100.in-addr.arpa. static", 
+                      "82.100.in-addr.arpa. static", 
+                      "83.100.in-addr.arpa. static", 
+                      "84.100.in-addr.arpa. static", 
+                      "85.100.in-addr.arpa. static", 
+                      "86.100.in-addr.arpa. static", 
+                      "87.100.in-addr.arpa. static", 
+                      "88.100.in-addr.arpa. static", 
+                      "89.100.in-addr.arpa. static", 
+                      "90.100.in-addr.arpa. static", 
+                      "91.100.in-addr.arpa. static", 
+                      "92.100.in-addr.arpa. static", 
+                      "93.100.in-addr.arpa. static", 
+                      "94.100.in-addr.arpa. static", 
+                      "95.100.in-addr.arpa. static", 
+                      "96.100.in-addr.arpa. static", 
+                      "97.100.in-addr.arpa. static", 
+                      "98.100.in-addr.arpa. static", 
+                      "99.100.in-addr.arpa. static", 
+                      "100.100.in-addr.arpa. static", 
+                      "101.100.in-addr.arpa. static", 
+                      "102.100.in-addr.arpa. static", 
+                      "103.100.in-addr.arpa. static", 
+                      "104.100.in-addr.arpa. static", 
+                      "105.100.in-addr.arpa. static", 
+                      "106.100.in-addr.arpa. static", 
+                      "107.100.in-addr.arpa. static", 
+                      "108.100.in-addr.arpa. static", 
+                      "109.100.in-addr.arpa. static", 
+                      "110.100.in-addr.arpa. static", 
+                      "111.100.in-addr.arpa. static", 
+                      "112.100.in-addr.arpa. static", 
+                      "113.100.in-addr.arpa. static", 
+                      "114.100.in-addr.arpa. static", 
+                      "115.100.in-addr.arpa. static", 
+                      "116.100.in-addr.arpa. static", 
+                      "117.100.in-addr.arpa. static", 
+                      "118.100.in-addr.arpa. static", 
+                      "119.100.in-addr.arpa. static", 
+                      "120.100.in-addr.arpa. static", 
+                      "121.100.in-addr.arpa. static", 
+                      "122.100.in-addr.arpa. static", 
+                      "123.100.in-addr.arpa. static", 
+                      "124.100.in-addr.arpa. static", 
+                      "125.100.in-addr.arpa. static", 
+                      "126.100.in-addr.arpa. static", 
+                      "127.100.in-addr.arpa. static", 
+                      "127.in-addr.arpa. static", 
+                      "254.169.in-addr.arpa. static", 
+                      "16.172.in-addr.arpa. static", 
+                      "17.172.in-addr.arpa. static", 
+                      "18.172.in-addr.arpa. static", 
+                      "19.172.in-addr.arpa. static", 
+                      "20.172.in-addr.arpa. static", 
+                      "21.172.in-addr.arpa. static", 
+                      "22.172.in-addr.arpa. static", 
+                      "23.172.in-addr.arpa. static", 
+                      "24.172.in-addr.arpa. static", 
+                      "25.172.in-addr.arpa. static", 
+                      "26.172.in-addr.arpa. static", 
+                      "27.172.in-addr.arpa. static", 
+                      "28.172.in-addr.arpa. static", 
+                      "29.172.in-addr.arpa. static", 
+                      "30.172.in-addr.arpa. static", 
+                      "31.172.in-addr.arpa. static", 
+                      "2.0.192.in-addr.arpa. static", 
+                      "168.192.in-addr.arpa. static", 
+                      "100.51.198.in-addr.arpa. static", 
+                      "113.0.203.in-addr.arpa. static", 
+                      "255.255.255.255.in-addr.arpa. static", 
+                      "localhost. static"
+                    ]
+                  }
+                }
+  /list_stubs:
+    get:
+      is: [restContextAuthorized]
+      description: |
+        List the stub zones in use.  These are printed one by one to the output.  This includes the root hints in use.
+      responses:
+        200:
+          body:
+            application/json:
+              schema: response
+              example: |
+                {
+                  "code": 200, 
+                  "message": "ok", 
+                  "payload": {
+                    "list_stubs": ". IN stub prime M.ROOT-SERVERS.NET. L.ROOT-SERVERS.NET. K.ROOT-SERVERS.NET. J.ROOT-SERVERS.NET. I.ROOT-SERVERS.NET. H.ROOT-SERVERS.NET. G.ROOT-SERVERS.NET. F.ROOT-SERVERS.NET. E.ROOT-SERVERS.NET. D.ROOT-SERVERS.NET. C.ROOT-SERVERS.NET. B.ROOT-SERVERS.NET. A.ROOT-SERVERS.NET. 2001:dc3::35 2001:500:3::42 2001:7fd::1 2001:503:c27::2:30 2001:7fe::53 2001:500:1::803f:235 2001:500:2f::f 2001:500:2d::d 2001:500:2::c 2001:500:84::b 2001:503:ba3e::2:30 202.12.27.33 199.7.83.42 193.0.14.129 192.58.128.30 192.36.148.17 128.63.2.53 192.112.36.4 192.5.5.241 192.203.230.10 199.7.91.13 192.33.4.12 192.228.79.201 198.41.0.4"
+                  }
+                }
+  /local_data/{RR}/{data}:
+    uriParameters:
+      data:
+        type: string
+        description: |
+          RR `data` parameter is delimited by forward slashses ('/').
+        
+          Example: .../local_data/localhost./10800/IN/NS/localhost."
+    post:
+      is: [restContextAuthorized]
+      description: |
+        Add  new  local data, the given resource record. Like local-data config statement, except for when no covering zone  exists.   In that case this remote control command creates a transparent zone with the same name as this record.  This command is not good  at returning detailed syntax errors.
+      responses:
+        200:
+          body:
+            application/json:
+              schema: response
+              example: |
+                {
+                  "code": 200, 
+                  "message": "ok", 
+                  "payload": {
+                    "cachedns_local_data": {
+                      "RR": "localhost.", 
+                      "data": [
+                        "10800", 
+                        "IN", 
+                        "NS", 
+                        "127.0.0.1"
+                      ], 
+                      "output": "ok"
+                    }
+                  }
+                }
+  /local_data_remove/{name}:
+    post:
+      is: [restContextAuthorized]
+      description: |
+        Remove  the  local  zone with the given name.  Removes all local data inside it.  If the zone does not exist,  the  command  succeeds.
+      responses:
+        200:
+          body:
+            application/json:
+              schema: response
+              example: |
+                {
+                  "code": 200, 
+                  "message": "ok", 
+                  "payload": {
+                    "local_data_remove": {
+                      "name": "secure64.com.", 
+                      "output": "ok"
+                    }
+                  }
+                }
+  /local_zone/{name}/{type}:
+    post:
+      is: [restContextAuthorized]
+      description: |
+        Add  new  local  zone with name and type. Like `local-zone` config statement.  If the zone already exists, the type is  changed  to the given argument.
+      responses:
+        200:
+          body:
+            application/json:
+              schema: response
+              example: |
+                {
+                  "code": 200, 
+                  "message": "ok", 
+                  "payload": {
+                    "local_zone": {
+                      "output": "ok", 
+                      "type": "static", 
+                      "zonename": "secur64.com"
+                    }
+                  }
+                }
+        400:
+          body:
+            application/json:
+              schema: response
+              example: |
+                {
+                  "code": 400, 
+                  "message": "error not a zone type. A", 
+                  "payload": {}
+                } 
+  /local_zone_remove/{name}:
+    post:
+      is: [restContextAuthorized]
+      description: |
+        Remove  the  local  zone with the given name.  Removes all local data inside it.  If the zone does not exist,  the  command  succeeds.
+      responses:
+        200:
+          body:
+            application/json:
+              schema: response
+              example: |
+                {
+                  "code": 200, 
+                  "message": "ok", 
+                  "payload": {
+                    "local_zone_remove": {
+                      "name": "secure64.com.", 
+                      "output": "ok"
+                    }
+                  }
+                }
+  /log_reopen:
+    post:
+      is: [restContextAuthorized]
+      description: |
+        Reopen the logfile, close and open it. Useful for logrotation to make the daemon release the file it is logging to. If you are using syslog it will attempt to close and open the syslog
+      responses:
+        200:
+          body:
+            application/json:
+              schema: response
+              example: |
+                {
+                  "code": 200, 
+                  "message": "ok", 
+                  "payload": {
+                    "cachedns_log_reopen": "log reopened"
+                  }
+                }
+  /lookup/{name}:
+    get:
+      is: [restContextAuthorized]
+      description: |
+        Return the name servers that would be used to look up the `name` specified.
+      responses:
+        200:
+          body:
+            application/json:
+              schema: response
+              example: |
+                {
+                  "code": 200, 
+                  "message": "ok", 
+                  "payload": {
+                    "lookup": [
+                      "The following name servers are used for lookup of secure64.com.", 
+                      ";rrset 3020 2 1 7 2", 
+                      "secure64.com.\t3020\tIN\tNS\tns1.secure64.com.", 
+                      "secure64.com.\t3020\tIN\tNS\tns2.secure64.com.", 
+                      "secure64.com.\t3020\tIN\tRRSIG\tNS 7 2 3600 20150625090050 20150618080050 61824 secure64.com. gkCEtGQsg/evpi+knz5wHIyaP7nuGXodSAvMtGOYKTkB2uQG/zS+StDmcJ5IKTuUcUjV4fNizQB9wBLdTygD5BTkLtbgXiFl7+iMCvrzLcncvqqNgDMhl1D/Qh7CSbRSinBblV4B94fzQbaGK+wBzWZh3pH8pqyMsl3/soxaXXQ= ;{id = 61824}", 
+                      ";rrset 85820 2 1 2 0", 
+                      "secure64.com.\t85820\tIN\tDS\t15570 7 1 8FF3EBAD7A6CA3E1023DE05394EDE4FBE524FE5B", 
+                      "secure64.com.\t85820\tIN\tDS\t15570 7 2 3357C094F116E7FE51225C761A8AF1D49121DF6A974C90926519FB7185D7DB72", 
+                      "secure64.com.\t85820\tIN\tRRSIG\tDS 8 2 86400 20150624045656 20150617034656 33878 com. JVGE6aXYFeqebhbJMZT6Tso5Rp3BE2CMD/gKYFwYMvcWaZwQNl8W7GkX52Yul/DJq/96lSPwLru85hPoXkkulPne8y/fGsnFPqZCxp1suxcKgdVIw4veDA+FDeiDWH1foov00YsjtMhQalP2MOn+NJAwrjsT3k0pO9jdJfp5YHU= ;{id = 33878}", 
+                      ";rrset 3020 1 1 3 2", 
+                      "ns2.secure64.com.\t3020\tIN\tA\t216.17.193.194", 
+                      "ns2.secure64.com.\t3020\tIN\tRRSIG\tA 7 3 3600 20150625090050 20150618080050 61824 secure64.com. d1DmmmnaWDHKo6S5b6kD7urSM3PIRjJt74Eu48iDwVUiQaEmOucnMcMPu0wqpqwaXlFWyUlU/d3sbbhCsenFJyIznF/cOX+n78BY2LhQjObUQmvUvT2zLoweq4aX5O2PoHZaOeuI1t0MYD0aaf7HJGFiN0IJ6YDF7FMKpIxUulw= ;{id = 61824}", 
+                      ";rrset 3020 1 1 3 2", 
+                      "ns1.secure64.com.\t3020\tIN\tA\t64.92.220.221", 
+                      "ns1.secure64.com.\t3020\tIN\tRRSIG\tA 7 3 3600 20150625090050 20150618080050 61824 secure64.com. iXy+wgVlvyJdCTklED0Wv92xtbX87SvCpCfqdce53UpmAy3SZafRoRhAdOO+TPUAjYPz4Q5HQkJEDR01Uf+2OHrOM5z+hYc9m2uNGdO8VbiReTXH8sWc+zIGY91J7lh5mzExnYUh2zF5eZprFR4xAKYqNP5BSZuvmMC4oPo5YCM= ;{id = 61824}", 
+                      "Delegation with 2 names, of which 2 can be examined to query further addresses.", 
+                      "It provides 2 IP addresses.", 
+                      "64.92.220.221   \trto 301 msec, ttl 320, ping 1 var 75 rtt 301, tA 0, tAAAA 0, tother 0, EDNS 0 probed.", 
+                      "216.17.193.194  \trto 252 msec, ttl 320, ping 4 var 62 rtt 252, tA 0, tAAAA 0, tother 0, EDNS 0 probed."
+                    ]
+                  }
+                }
+  /reload:
+    post:
+      is: [restContextAuthorized]
+      description: |
+        Reload the server. This flushes the cache and reads the config file fresh.
+      responses:
+        200:
+          body:
+            application/json:
+              schema: response
+              example: |
+                {
+                  "code": 200, 
+                  "message": "ok", 
+                  "payload": {
+                    "cachedns_reload": "ok"
+                  }
+                }
+  /set_option/{opt}/{value}:
+    post:
+      is: [restContextAuthorized]
+      description: |
+        Set  the  option to the given value without a reload.  The cache is therefore not flushed. Some values may not have an effect if set this way, the new  values  are not  written  to the config file, not all options are supported.
+
+        The  values that work are: statistics-interval, statistics-cumulative, do-not-query-localhost, harden-short-bufsize, harden-large-queries,    harden-glue,    harden-dnssec-stripped,  harden-below-nxdomain,      harden-referral-path,      prefetch, prefetch-key,  log-queries,  hide-identity,  hide-version, identity, version, val-log-level,  val-log-squelch,  ignore-cd-flag, add-holddown,    del-holddown,    keep-missing,    tcp-upstream, ssl-upstream, max-udp-size.
+      responses:
+        200:
+          body:
+            application/json:
+              schema: response
+              example: |
+                {
+                  "code": 200, 
+                  "message": "ok", 
+                  "payload": {
+                    "set_option": {
+                      "option": "do-not-query-localhost", 
+                      "output": "ok", 
+                      "value": "yes"
+                    }
+                  }
+                }
+  /start:
+    post:
+      is: [restContextAuthorized]
+      description: |
+          Start CacheDNS
+      responses:
+        200:
+          body:
+            application/json:
+              schema: response
+              example: |
+                {
+                  "code": 200, 
+                  "message": "ok", 
+                  "payload": {
+                    "cachedns_start": "CacheDNS started"
+                  }
+                }
+  /stop:
+    post:
+      is: [restContextAuthorized]
+      description: |
+          Stop CacheDNS
+      responses:
+        200:
+          body:
+            application/json:
+              schema: response
+              example: |
+                {
+                  "code": 200, 
+                  "message": "ok", 
+                  "payload": {
+                    "cachedns_stop": "CacheDNS stopped"
+                  }
+                }
+  /status:
+    get:
+      is: [restContextAuthorized]
+      description: |
+        Returns CacheDNS status
+      responses:
+        200:
+          body:
+            application/json:
+              schema: reponse
+              example: |
+                {
+                  "code": 200, 
+                  "message": "ok", 
+                  "payload": {
+                    "cachedns_status": [
+                      "version: 1.0.0", 
+                      "verbosity: 1", 
+                      "threads: 2", 
+                      "modules: 2 [ validator iterator ]", 
+                      "uptime: 284 seconds", 
+                      "options: control(ssl)", 
+                      "s64cachedns (pid 5518) is running..."
+                    ]
+                  }
+                }
+
+  /stats:
+    get:
+      is: [restContextAuthorized]
+      description: |
+        Print statistics. Statistics are printed with one [name]: [value] per line.
+      responses:
+        200:
+          body:
+            application/json:
+              schema: response
+              example: |
+                {
+                  "code": 200, 
+                  "message": "ok", 
+                  "payload": {
+                    "cachedns_stats": {
+                      "histogram.000000.000000.to.000000.000001": 0, 
+                      "histogram.000000.000001.to.000000.000002": 0, 
+                      "histogram.000000.000002.to.000000.000004": 0, 
+                      "histogram.000000.000004.to.000000.000008": 0, 
+                      "histogram.000000.000008.to.000000.000016": 0, 
+                      "histogram.000000.000016.to.000000.000032": 0, 
+                      "histogram.000000.000032.to.000000.000064": 0, 
+                      "histogram.000000.000064.to.000000.000128": 0, 
+                      "histogram.000000.000128.to.000000.000256": 0, 
+                      "histogram.000000.000256.to.000000.000512": 0, 
+                      "histogram.000000.000512.to.000000.001024": 0, 
+                      "histogram.000000.001024.to.000000.002048": 0, 
+                      "histogram.000000.002048.to.000000.004096": 0, 
+                      "histogram.000000.004096.to.000000.008192": 0, 
+                      "histogram.000000.008192.to.000000.016384": 0, 
+                      "histogram.000000.016384.to.000000.032768": 0, 
+                      "histogram.000000.032768.to.000000.065536": 0, 
+                      "histogram.000000.065536.to.000000.131072": 0, 
+                      "histogram.000000.131072.to.000000.262144": 0, 
+                      "histogram.000000.262144.to.000000.524288": 0, 
+                      "histogram.000000.524288.to.000001.000000": 0, 
+                      "histogram.000001.000000.to.000002.000000": 0, 
+                      "histogram.000002.000000.to.000004.000000": 0, 
+                      "histogram.000004.000000.to.000008.000000": 0, 
+                      "histogram.000008.000000.to.000016.000000": 0, 
+                      "histogram.000016.000000.to.000032.000000": 0, 
+                      "histogram.000032.000000.to.000064.000000": 0, 
+                      "histogram.000064.000000.to.000128.000000": 0, 
+                      "histogram.000128.000000.to.000256.000000": 0, 
+                      "histogram.000256.000000.to.000512.000000": 0, 
+                      "histogram.000512.000000.to.001024.000000": 0, 
+                      "histogram.001024.000000.to.002048.000000": 0, 
+                      "histogram.002048.000000.to.004096.000000": 0, 
+                      "histogram.004096.000000.to.008192.000000": 0, 
+                      "histogram.008192.000000.to.016384.000000": 0, 
+                      "histogram.016384.000000.to.032768.000000": 0, 
+                      "histogram.032768.000000.to.065536.000000": 0, 
+                      "histogram.065536.000000.to.131072.000000": 0, 
+                      "histogram.131072.000000.to.262144.000000": 0, 
+                      "histogram.262144.000000.to.524288.000000": 0, 
+                      "infra.cache.count": 0, 
+                      "key.cache.count": 0, 
+                      "mem.cache.message": 66072, 
+                      "mem.cache.rrset": 66072, 
+                      "mem.mod.iterator": 16540, 
+                      "mem.mod.validator": 66280, 
+                      "mem.total.sbrk": 0, 
+                      "msg.cache.count": 0, 
+                      "num.answer.bogus": 0, 
+                      "num.answer.rcode.FORMERR": 0, 
+                      "num.answer.rcode.NOERROR": 0, 
+                      "num.answer.rcode.NOTIMPL": 0, 
+                      "num.answer.rcode.NXDOMAIN": 0, 
+                      "num.answer.rcode.REFUSED": 0, 
+                      "num.answer.rcode.SERVFAIL": 0, 
+                      "num.answer.secure": 0, 
+                      "num.query.edns.DO": 0, 
+                      "num.query.edns.present": 0, 
+                      "num.query.flags.AA": 0, 
+                      "num.query.flags.AD": 0, 
+                      "num.query.flags.CD": 0, 
+                      "num.query.flags.QR": 0, 
+                      "num.query.flags.RA": 0, 
+                      "num.query.flags.RD": 0, 
+                      "num.query.flags.TC": 0, 
+                      "num.query.flags.Z": 0, 
+                      "num.query.ipv6": 0, 
+                      "num.query.tcp": 0, 
+                      "num.query.tcpout": 0, 
+                      "num.rrset.bogus": 0, 
+                      "rrset.cache.count": 0, 
+                      "thread0.num.cachehits": 0, 
+                      "thread0.num.cachemiss": 0, 
+                      "thread0.num.prefetch": 0, 
+                      "thread0.num.queries": 0, 
+                      "thread0.num.recursivereplies": 0, 
+                      "thread0.recursion.time.avg": 0.0, 
+                      "thread0.recursion.time.median": 0, 
+                      "thread0.requestlist.avg": 0, 
+                      "thread0.requestlist.current.all": 0, 
+                      "thread0.requestlist.current.user": 0, 
+                      "thread0.requestlist.exceeded": 0, 
+                      "thread0.requestlist.max": 0, 
+                      "thread0.requestlist.overwritten": 0, 
+                      "thread0.tcpusage": 0, 
+                      "thread1.num.cachehits": 0, 
+                      "thread1.num.cachemiss": 0, 
+                      "thread1.num.prefetch": 0, 
+                      "thread1.num.queries": 0, 
+                      "thread1.num.recursivereplies": 0, 
+                      "thread1.recursion.time.avg": 0.0, 
+                      "thread1.recursion.time.median": 0, 
+                      "thread1.requestlist.avg": 0, 
+                      "thread1.requestlist.current.all": 0, 
+                      "thread1.requestlist.current.user": 0, 
+                      "thread1.requestlist.exceeded": 0, 
+                      "thread1.requestlist.max": 0, 
+                      "thread1.requestlist.overwritten": 0, 
+                      "thread1.tcpusage": 0, 
+                      "time.elapsed": 10.416209, 
+                      "time.now": 1434579858.18096, 
+                      "time.up": 10.416209, 
+                      "total.num.cachehits": 0, 
+                      "total.num.cachemiss": 0, 
+                      "total.num.prefetch": 0, 
+                      "total.num.queries": 0, 
+                      "total.num.recursivereplies": 0, 
+                      "total.recursion.time.avg": 0.0, 
+                      "total.recursion.time.median": 0, 
+                      "total.requestlist.avg": 0, 
+                      "total.requestlist.current.all": 0, 
+                      "total.requestlist.current.user": 0, 
+                      "total.requestlist.exceeded": 0, 
+                      "total.requestlist.max": 0, 
+                      "total.requestlist.overwritten": 0, 
+                      "total.tcpusage": 0, 
+                      "unwanted.queries": 0, 
+                      "unwanted.replies": 0
+                    }
+                  }
+                }
+  /stub_add/{zone}/{address}:
+    uriParameters:
+      address:
+        type: string
+        description: |
+          May be one or more addresses, delimited by forward slash characters ('/')
+    post:
+      is: [restContextAuthorized]
+      description: |
+        Add a new stub zone to running unbound.   With 'insecure=true' query parameter  option  also adds  a  domain-insecure for the zone.  With 'prime=true' the stub zone is set to prime, without it it is set to notprime.  The addr can be IP4,  IP6  or  nameserver  names,  like  the stub-zone config in cache.conf.
+      queryParameters:
+        insecure:
+          displayName: insecure
+          required: false
+          type: string
+          default: "false"
+        prime:
+          displayName: prime
+          required: false
+          type: string
+          default: "false"
+      responses:
+        200:
+          body:
+            application/json:
+              schema: response
+              example: |
+                {
+                  "code": 200, 
+                  "message": "ok", 
+                  "payload": {
+                    "cachedns_stub_add": {
+                      "address": [
+                        "127.0.0.1", 
+                        "127.0.0.2"
+                      ], 
+                      "insecure": false, 
+                      "output": "ok", 
+                      "prime": true, 
+                      "zone": "secure64.com."
+                    }
+                  }
+                }
+  /stub_remove/{zone}:
+    post:
+      is: [restContextAuthorized]
+      description: |
+        Remove a stub zone from running CacheDNS.  The 'insecure=true' query parameter also removes  a domain-insecure for the zone.
+      queryParameters:
+        insecure:
+          displayName: insecure
+          required: false
+          type: string
+          default: "false"
+      responses:
+        200:
+          body:
+            application/json:
+              schema: response
+              example: |
+                {
+                  "code": 200, 
+                  "message": "ok", 
+                  "payload": {
+                    "cachedns_stub_remove": {
+                      "insecure": false, 
+                      "output": "ok", 
+                      "zone": "secure64.com."
+                    }
+                  }
+                }
+  /verbosity/{verbosity}:
+    uriParameters:
+      verbosity:
+        type: integer
+    post:
+      is: [restContextAuthorized]
+      description: |
+        Set CachDNS's logging level
+      responses:
+        200:
+          body:
+            application/json:
+              schema: response
+              example: |
+                {
+                  "code": 200, 
+                  "message": "ok", 
+                  "payload": {
+                    "cachedns_verbosity": {
+                      "output": "ok", 
+                      "verbosity": 1
+                    }
+                  }
+                }
+  
+  description: |
+    CacheDNS resources interact with a caching Secure64 DNS server. 
+/enum:
+  description: |
+    ENUM resources are specific to the ENUM Provisioning System.
+  /record/{phone_number}:
+    description: |
+      Add, delete, or retrieve a DNS ENUM record from the ENUM MNP database.
+    uriParameters:
+     phone_number:
+      description: |
+        Specifies the subscriber telephone number
+      displayName: Phone Number
+      type: integer
+    get:
+      description: |
+        retrieves DNS ENUM data for the specified telephone number.
+               
+        Note: a DNS Serial Number of 0 indicates that this domain is waiting for a DNS zone transfer to the production servers.  The DNS zone transfer daemon has not yet timed out to perform a NOTIFY or IXFR/AXFR for this domain.        
+      responses:        
+        200:
+         body:
+           application/json:
+            example: |
+               { 
+                 "phoneNumber":   "79031234567",
+                 "MNC": 99,
+                 "serviceProvider": "Vimpel-Communications",
+                 "DNSSerialNumber": 1441319643
+                 "domainName":           "7.6.5.4.3.2.1.3.0.9.7.e164.arpa.",
+                 "naptrType": "VoLTE",
+                 "naptr": '100 10 "u" "E2U+SIP" "!^.*$!sip:+79031234567;npdi@msk.ims.mnc099.mcc250.3gppnetwork.org;user=phone!" .',
+               }
+               
+        400:
+          body:
+           application/json:
+            example: |
+               {
+                 "message": "Invalid phone number -- must be 11 numeric digits"
+               } 
+               
+        422:
+          body:
+           application/json:
+            example: |
+               {
+                 "message": "Phone number does not exist; it is not allocated in the telephone routing table to any service provider"
+               }           
+                  
+      is: [restContextAuthorized]    
+    put:
+      is: [restContextAuthorized]    
+      description: |
+        Adds a DNS ENUM record to the ENUM MNP database using MML compatible query parameters.   
+      body:
+        application/json:
+          formParameters:        
+            NUMTYPE:
+              displayName: NUMTYPE
+              description: |
+                Value must be `TYPE1`, `TYPE2`, or `TYPE3`. 
+                
+                NUMTYPE specifies the semantic behavior for adding a record to the ENUM MNP database.  
+                
+                   `TYPE1`:  portout a Beeline phone number to an alien service provider  or portout from a previously ported-in SP number.
+                   
+                   `TYPE2`:  portin of an alien number to Beeline. 
+                   
+                   `TYPE3`:  transfer from SP1 to SP2 with no Beeline participation.  
+                
+                Note -- `TYPE2` (portin) can also be used to create a VOLTE record for a Vimpelcom phone number by setting the RNINDXTYPE parameter to VOLTE.
+                
+              example: TYPE1
+              required: true
+              type: string
+              minLength: 5
+              maxLength: 5
+              
+            SERVATTR:
+              displayName: SERVATTR
+              description: |
+                Specifies a server attribute.  This parameter is not used by the ENUM MNP database and is therefore optional.  If present, the value must be `OMNP-1`.
+              default: OMNP-1
+              minLength: 6
+              maxLength: 6
+              required: false
+              example: OMNP-1
+              type: string
+              
+            RNIDXTYPE:
+              description: >
+                Value must be `RN`, `ALL` or `VOLTE`. 
+                
+                RNDIXTYPE specifies how to interpret the RN query parameter.  The value must be:
+                
+                  `RN`: indicates that the RN query parameter specifies a normal route in  "Dnnnn" format. 
+                  
+                  `ALL`: indicates that a `TYPE2` (portin) RN could be in any format 
+                  
+                  `VoLTE`: indicates that  NAPTR record should be constructed using a VoltE format instead of the default construction of a "Dnnnn" routing record.
+                
+              displayName: RNIDXTYPE
+              example: RN
+              minLength: 2
+              maxLength: 5
+              type: string
+              required: true
+              
+            RN:
+              description: |
+                Specifies the route number in "Dnnnn" format; that is, the letter D followed by 4 numeric digits. 
+              displayName: RN
+              example: D1256
+              maxLength: 5
+              minLength: 5
+              type: string
+              required: true
+              
+            HLRIDX:
+              description: |
+                An optional parameter that specifies the HLRID value.  This value is not used by the ENUM MNP database.
+              displayName: HLRIDX
+              example: 098
+              type: string
+              required: false
+              
+            NAPTR:
+              description: |
+                This optional parameter overrides the NAPTR record that would have been automatically generated and provides a method for the user to manually specify the NAPTR record for a telephone number. 
+              displayName: NAPTR
+              example: 100 10 "u" "E2U+SIP" "!^.*$!tel:\1;npdi!" .
+              required: false
+              type: string      
+      responses:        
+        200:
+         body:
+           application/json:
+            example: |
+               {
+                 "message": "success: DNS record added",
+                 "domain": "7.6.5.4.3.2.1.2.2.9.7.e164.arpa."
+                 "naptr": '100 10 "u" "E2U+SIP" "!^.*$!tel:\1;npdi;rn=D6799!" .'
+                 
+               }    
+        400:
+          body:
+           application/json:
+            example: |
+               {
+                 "message": "Invalid phone number -- must be 11 numeric digits"
+               }          
+        422:
+          body:
+           application/json:
+            example: |
+               {
+                 "message": "Phone number already exists in MNP database.  You must delete the existing record first."
+               }   
+                         
+    delete:
+      is: [restContextAuthorized]
+      description: |
+        deletes a DNS ENUM record from the ENUM MNP database using MML compatible parameters.
+      
+      body:
+        application/json:
+          formParameters:
+            MODE:
+              description: This is an optional parameter.  If present, it must be the string `NUM`.
+              displayName: MODE
+              example: NUM
+              required: false
+              type: string
+              minLength: 3
+              maxLength: 3
+          
+      responses:
+        200:
+         body:
+           application/json:
+            example: |
+               {
+                 "message": "success: DNS record deleted",
+                 "domain": "7.6.5.4.3.2.1.2.2.9.7.e164.arpa."
+               }    
+        400:
+          body:
+           application/json:
+            schema: standardResponse
+            example: |
+               {
+                 "status": 400,
+                 "message": "Invalid phone number -- must be 11 numeric digits"
+               }          
+        422:
+          body:
+           application/json:
+            example: |
+               {
+                 "message": "Phone number does not exist; it is not allocated in the telephone routing table to any service provider"
+               }  
+               
+  /zonedata/{zone_name}:
+    get:
+      is: [restContextAuthorized, producesFile]
+  /stats:
+    get:
+    /{zone_name}:
+      get:
+  /xfr/status:
+    get:
+/sysadmin:
+  description: |
+    Sysadmin resources allow the user to place certain configuration files onto the DNS system.
+  /snmpd:
+    /config:
+      get:
+        is: [restContextAuthorized, producesFile]
+        description: Returns the `snmpd.conf` file in BIN format.
+      put:
+        is: [restContextAuthorized, consumesFile]
+        description: |
+          Places/replaces the `snmpd.conf` file on the server. The name of the file being "PUT" must be `snmpd.conf`.
+        responses:
+          200:
+            body:
+              application/json:
+                schema: response
+                example: |
+                  {
+                    "code": 200,
+                    "message": "ok",
+                    "payload": {
+                      "file": "snmpd.conf",
+                      "directory": "/usr/local/s64/sysadmin"
+                    }
+                  }
+  /ldap:
+    /config:
+      get:
+        is: [restContextAuthorized, producesFile]
+        description: Returns the `ldap.conf` file in BIN format.
+      put:
+        is: [restContextAuthorized, consumesFile]
+        description: Places/replaces the `ldap.conf` file on the server. The name of the file being "PUT" must be `ldap.conf`.
+        responses:
+          200:
+            body:
+              application/json:
+                schema: response
+                example: |
+                  {
+                    "code": 200,
+                    "message": "ok",
+                    "payload": {
+                      "file": "ldap.conf",
+                      "directory": "/usr/local/s64/sysadmin"
+                    }
+                  }
+  /radius:
+    /config:
+      get:
+        is: [restContextAuthorized, producesFile]
+        description: Returns the `ldap.conf` file in BIN format.
+      put:
+        is: [restContextAuthorized, consumesFile]
+        description: Places/replaces the `ldap.conf` file on the server. The name of the file being "PUT" must be `ldap.conf`.
+        responses:
+          200:
+            body:
+              application/json:
+                schema: response
+                example: |
+                  {
+                    "code": 200,
+                    "message": "ok",
+                    "payload": {
+                      "file": "ldap.conf",
+                      "directory": "/usr/local/s64/sysadmin"
+                    }
+                  }
+/api_key/{role}:
+  description: |
+    The `/api_key` resource consumes system-context credentials and returns a role-specific token, only if the supplied credentials authenticate the user and that user is authorized in the role associated with the request.
+  get:
+    is: [systemContextAuthorized]
+    responses:
+      200:
+        body:
+          application/json:
+            schema: response
+            example: |
+              {
+                "code": 200,
+                "message": "ok",
+                "payload": {
+                  "key": "dGhpc2lzYXdlYWthcGlrZXkK",
+                  "role": "authdnsadmin"
+                }
+              }
+      401:
+        body:               
+          application/json:
+            schema: response
+            example: |
+              {
+                "code": 401, 
+                "message": "Unauthorized. Incorrect/missing API key or incorrect credentials", 
+                "payload": {
+                  "ref": {
+                    "get_api_key_for_role": "/api/v1/api_key/<role>"
+                  }
+                }
+              }
+      403:
+        body:
+          application/json:
+            schema: response
+            example: |
+              {
+                "code": 403, 
+                "message": "Forbidden. You do not have access to the role 'cachednsadmin'", 
+                "payload": {}
+              }
+
+
+schemas:
+  - response: |
+      {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "required": true
+          },
+          "message": {
+            "type": "string",
+            "required": true
+          },
+          "payload": {
+            "type": "object",
+            "required": true
+          }
+        }  
+      }
+traits:
+  - systemContextAuthorized:
+      usage: Use to obtain a role-based API key
+      headers:
+        Authorization:
+          displayName: Authorization
+          description: |
+            A base64-encoded `username:password` combination that authenticates a user to the system.
+          type: string
+          required: true
+  - restContextAuthorized:
+      usage: Use to send API requests
+      headers:
+        Authorization:
+          displayName: Authorization
+          description: |
+            A role-based, base64-encoded key used for API requests. The key can be retrieved from the `/api_key/{role}` resource.
+          required: true
+          type: string
+  - consumesFile:
+      body:
+        multipart/form-data:
+          formParameters:
+            file:
+              description: |
+                The file used in the PUT request
+              type: file
+              required: true
+  - producesFile:
+      description: |
+        Returns the requested file
+  - pathInQuery:
+      displayName: dir
+      queryParameters:    
+        dir:
+          type: string
+          description: |
+            A forward slash (/) delimited relative path. Used to place the file in a subdirectory of a standard location.
+          required: false 
