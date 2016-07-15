@@ -15,6 +15,10 @@
 - All APIs are intended for programmatic use
 - Asynchronous API calls shall set an expectation as to when the operation will complete
 - Error codes for back end operations shall accurately describe the resulting state of the end service
+- APIs shall be organized around generic namespace rather than product specific namespaces
+  - e. g. authority-server vs authdns
+- APIs shall be extensible
+- APIs shall be under version control
 
 ### discussion
 
