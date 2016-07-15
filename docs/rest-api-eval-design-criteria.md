@@ -14,11 +14,15 @@
 - APIs shall be composable
 - All APIs are intended for programmatic use
 - Asynchronous API calls shall set an expectation as to when the operation will complete
-- Error codes for back end operations shall accurately describe the resulting state of the end service
-- APIs shall be organized around generic namespace rather than product specific namespaces
+- Error codes for back end operations shall accurately describe the
+  resulting state of the end service
+- APIs shall be organized around generic namespace rather than product specific
+  namespaces
   - e. g. authority-server vs authdns
 - APIs shall be extensible
 - APIs shall be under version control
+- The DNS API should be generic such that they could be implemented by any DNS service
+  endpoint provider
 
 ### discussion
 
@@ -71,6 +75,9 @@ The primary error object is the HTTP result code.
 
 A secondary error object will be added to capture and return the
 status of the requested service endpoint operation.
+
+The error handling shall clearly indicate when an operation is not
+supported. 
 
 ### discussion
 
