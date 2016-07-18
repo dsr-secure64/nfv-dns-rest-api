@@ -55,8 +55,8 @@ scheduled.
 ## security model
 
 The security model shall handle the authorization (user/role) and
-authentication of clients. Confidentiality and integrity are will not
-be addressed.
+authentication of clients as well as accounting.  Confidentiality and
+integrity will not be addressed.
 
 It is assumed that ALL requests to the server shall be over HTTPS.
 
