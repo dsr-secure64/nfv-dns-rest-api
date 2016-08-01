@@ -42,7 +42,7 @@ restart.
 ```
 ## idempotency
 
-A ReST API requires all HTTP operations, except POST, to yield the
+A ReST API requires all HTTP operations, except POST and PATCH, to yield the
 same result each time it is invoked. That said, an idempotent
 operation may not always return the same result (error code).
 
