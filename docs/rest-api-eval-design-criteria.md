@@ -10,7 +10,6 @@
 ## DNS ReST API design considerations
 
 - All API calls shall be atomic
-- All API calls shall be granular
 - APIs shall be composable
 - All APIs are intended for programmatic use
 - Asynchronous API calls shall set an expectation as to when the operation will complete
