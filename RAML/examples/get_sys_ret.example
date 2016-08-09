@@ -1,0 +1,33 @@
+{
+  "sys_id": "123e4567-e89b-12d3-a456-426655440000",
+  "ems_address": "10.1.13.109",
+  "netconf_ip": "10.1.13.176",
+  "netconf_port": 1234,
+  "auth": {
+    "identity": {
+      "methods": [
+        "password"
+      ],
+      "password": {
+        "user": {
+          "id": "423f19a4ac1e4f48bbb4180756e6eb6c",
+          "password": "devstacker"
+        }
+      }
+    }
+  },
+  "vnfc_ids": [ 
+    "123e4567-e89b-12d3-a456-426655440001",
+    "123e4567-e89b-12d3-a456-426655440002"
+  ],
+  "int_connection_points": [
+    "layer2",
+    "layer3"
+  ],
+  "ext_connection_points": [
+    "layer1",
+    "layer2"
+  ],
+  "timeout": 5,
+  "status": "INS"
+}

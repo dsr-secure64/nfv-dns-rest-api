@@ -1,0 +1,21 @@
+#%RAML 1.0 DataType
+
+# File: types/error.raml
+# This file defines the Error data type
+
+type: object
+description: |
+  A user error object.
+properties:
+  userMessage:
+    type: string
+    description: The internal error message.
+    required: true
+  code:
+    type: integer
+    description: The internal error code.
+    required: true
+  moreInfo:
+    type: string
+    description: More detailed error message/link if necessary.
+    required: false

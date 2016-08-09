@@ -1,0 +1,35 @@
+#%RAML 1.0 Trait
+
+# File: traits/4xx.raml
+
+responses:
+  400:
+    description: "Bad Request"
+    body:
+      application/json:
+        type: object
+        example: 
+          {
+            "errors": [
+              {
+                "userMessage": "The requested resoursce does not exist",
+                "code": 34,
+                "moreInfo": "https://www.secure64.com/blog/..."
+              }
+            ]
+          }
+  401:
+    description: "Unauthorized"
+    body:
+      application/json:
+        type: object
+        example:
+          {
+            "errors": [
+              {
+                "userMessage": "You are not authorized to access this resource",
+                "code": 12,
+                "moreInfo": "https://www.secure64.com/blog/..."
+              }
+            ]
+          }

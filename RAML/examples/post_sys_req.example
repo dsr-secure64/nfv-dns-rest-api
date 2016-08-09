@@ -1,0 +1,26 @@
+{
+  "type": "object",
+  "$schema": "http://json-schema.org/draft-03/schema",
+  "id": "http://jsonschema.net",
+  "sys_id": " 123e4567-e89b-12d3-a456-426655440000",
+  "ems_address": "10.13.37.109",
+  "netconf_ip": "10.13.37.176",
+  "netconf_port": "1234",
+  "auth": {
+    "user": "toor",
+    "password": "root"
+  },
+ “vnfc_ids”: [
+    "123e4567-e89b-12d3-a456-426655440001",
+    "123e4567-e89b-12d3-a456-426655440002"
+ ],
+ “int_connection_points”: [
+    “layer1”,
+    “layer2”
+ ],
+ “ext_connection_points”: [
+    “layer2”,
+    “layer3”
+ ],
+  "timeout": 5
+}

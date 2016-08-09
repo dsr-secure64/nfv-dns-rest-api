@@ -1,0 +1,62 @@
+{
+  "type": "object",
+  "$schema": "http://json-schema.org/draft-03/schema",
+  "id": "http://jsonschema.net",
+  "required": true,
+  "properties": {
+    "sys_id": {
+      "type": "string",
+      "description": "The UUID of the system.",
+      "required": true
+    },
+    "ems_address": {
+      "type": "string",
+      "description": "Address/URL from where the VNF shall download configuration.",
+      "required": true
+    },
+    "netconf_ip": {
+      "type": "string",
+      "description": "Local IP address where the VNF should run the NETCONF server.",
+      "required": true
+    },
+    "netconf_port": {
+      "type": "string",
+      "description": "Local IP port where the VNF should run the NETCONF server.",
+      "required": true
+    },
+    "auth": {
+      "type": "object",
+      "required": true,
+      "properties": {
+        "user": {
+          "type": "string",
+          "required": true
+        },
+        "password": {
+          "type": "string",
+          "required": true
+        }
+      }
+    },
+    "timeout": {
+      "type": "integer",
+      "description": "Duration in seconds that the VNFM shall wait for the response. After the expiry of this duration the VNF shall send the failure response to the VNFM and clear all the configuration data. The VNF shall go back to the state it was beofre recieving the request. I.e., STARTED.",
+      "required": true
+    },
+    "vnfc_ids": {
+      "type": "array",
+      "description": "A list of vnfc_id strings",
+      "required": true
+    },
+    "int_connection_points": {
+      "type": "array",
+      "description": "A list of internal connection point strings. E.g., \"layer1\", \"layer2\", \"layer3\".",
+      "required": true
+    },
+    "ext_connection_points": {
+      "type": "array",
+      "description": "A list of external connection point strings. E.g., \"layer1\", \"layer2\", \"layer3\".",
+      "required": true
+    }
+  }
+}

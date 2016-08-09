@@ -1,0 +1,11 @@
+#%RAML 1.0 Trait
+
+queryParameters:
+  sort?:
+    description: |
+     `sort` can be used to describe sorting rules with a possible unary negative (the `'-'` operator) to imply descending sort order. Only one sorting parameter is allowd.
+     
+     The use of `'&'` (logical AND) and `'|'` (logical OR) may be used to create a compound boolean expression for sorting.
+     
+    example: |
+      GET /api/v1.0/vnfcs?sort=-vnfc_id

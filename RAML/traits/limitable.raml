@@ -1,0 +1,11 @@
+#%RAML 1.0 Trait
+
+queryParameters:
+  fields?:
+    description: |
+      Use a `fields` query parameter that takes a comma separated list of fields to include. Limiting return fields is provided for all first level attributes.
+      
+      The use of `'&'` (logical AND) and `'|'` (logical OR) may be used to create a compound boolean expression for limiting.
+      
+    example: |
+      GET /api/v1.0/vnfcs?fields=cpus,memory,disk
