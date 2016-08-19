@@ -1,12 +1,11 @@
 #%RAML 1.0 Trait
 
-queryParameters:
-  filterable_parameter?:
-    description: |
-      Use a unique query parameter for each field that implements filtering. Some first level attributes/parameters are qulified as unique query parameters.
-      
-      The use of `'&'` (logical AND) and `'|'` (logical OR) may be used to create a compound boolean expression for filtering.
-      
-      *NOTE:* "filterable_parameter" is **not** the name of the parameter. In the below example the filterable parameters is `vnfc_id`
-    example: |
-      GET /api/v1.0/vnfcs?fields=cpus, memory,disks &vnfc_id="123e4567-e89b-12d3-a456-426655440001"
+<<filterable_parameter>>?:
+  description: |
+    Use a unique query parameter for each field that implements filtering. Some first level attributes/parameters are qulified as unique query parameters.
+
+    The use of `'&'` (logical AND) and `'|'` (logical OR) may be used to create a compound boolean expression for filtering.
+
+    *NOTE:* "filterable_parameter" is **not** the name of the parameter. In the below example the filterable parameters is `vnfc_id`
+  example: |
+    GET /api/v1.0/vnfcs?fields=cpus,memory,disks&vnfc_id="123e4567-e89b-12d3-a456-426655440001"

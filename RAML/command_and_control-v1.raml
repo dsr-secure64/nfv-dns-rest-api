@@ -1,22 +1,19 @@
 #%RAML 1.0
 
 # File: command_and_control-v1.raml
-# This is the top-level file to include traits, schemas, examples, etc.. 
-# The endpoints in this API file describe the command and control resources available 
-# through the API. Those types of actions include: instantiation, configuration, 
+# This is the top-level file to include traits, schemas, examples, etc..
+# The endpoints in this API file describe the command and control resources available
+# through the API. Those types of actions include: instantiation, configuration,
 # provisioning, and lifecycle state changes.
 
-title: Secure64 Ve-VNF API
-version: 1.0.0
-baseUri: https://{host}/api/{api_version}
+title: Secure64 Ve-VNFM API
+version: v1.0
+protocols: [ HTTPS ]
+baseUri: https://{host}/api/{version}
 baseUriParameters:
   host:
     description: |
-      The node running the API.      
-  api_version:
-    description: |
-      The version of the API.
-    example: "v1.0"
+      The node running the Ve-VNFM API.
 mediaType:  application/json
 
 # Resources
@@ -26,7 +23,7 @@ mediaType:  application/json
   get:
     description: |
       GET is used to retrieve on-demand system configuration like EMS address/URL and NETCONF IP address/port. The `sys_id`, `ems_address`, `netconf_ip`, and `status` can be used for filter and sort query-string parameters.
-    is: [ filterable, limitable, sortable ]
+    is: [ limitable, sortable, sys_id ]
     responses:
       200:
         description: |
@@ -38,13 +35,26 @@ mediaType:  application/json
   post:
     description: |
       A VNF instance is instantiated by using REST POST API with a system definition. The system definition contains required parameters for minimum system configuration.
-    body:         
+    is: [ 2xx ]
+    body:
       application/json:
-        schema: !include schemas/post_sys_req.schema              
+        type: object
+        properties:
+          sys_id: SysID
+          ems_address: EMSAddress
+          netconf_ip: NetconfIP
+          netconf_port: NetconfPort
+          timeout: Timeout
+          auth: Auth
+          identity: Identity
+          vnfc_ids: VNFCIDS
+          int_connection_points: IntConnectionPoints
+          ext_connection_points: ExtConnectionPoints
+          status: Status
     responses:
       200:
         description: |
-          A successful response **may not** produce a body.      
+          A successful response **may not** produce a body.
   put:
     description: |
       The PUT operation is to change VNF configuration or to perform change-config/start/stop/restart the system.
@@ -57,10 +67,13 @@ mediaType:  application/json
   get:
     description: |
       The GET operation on /api/v1.0/vnfcs is used to retrieve INS/OOS status and rsource information for all VNFCs.
-    is: [ filterable, limitable, sortable ]
+    is: [ limitable, sortable]
+    queryParameters:
+      vnfc_id?: !include /parameters/vnfc_id.raml
+
   post:
     description: |
-      
+
   /{vnfc-id}:
     description: |
       A VNFC instance as specified by `{vnfc-id}`.
@@ -68,8 +81,44 @@ mediaType:  application/json
       description: |
         The GET operation on /api/v1.0/vnfcs/{vnfc-id} is used to retrieve INS/OOS status and resource information for a VNFC.
       responses:
+/zones:
+  description: |
+    Data about zones on the server.
+  is: [ 4xx ]
+  get:
+    description: |
+      Get data about all zones from the server.
+  post:
+    description: |
+      Create new zone data on the server.
+  delete:
+    description: |
+      Remove zone from server.
+  /{zone}:
+    get:
+    /rrsets:
+      get:
+      /{rrset_type}:
+        get:
+        /{owner}:
+          get:
+          post:
+            description: |
+              Create an RRSet.
+            body:
+              application/json:
+                type: object
+                properties:
+                  ttl: TTL
+                  rdata: RRSet
+                example: {"ttl":3600,"rdata":["1.2.3.4","5.6.7.8"]}
+/queue:
+  description: |
+    The `/queue` resource represents the status of Asynchronous task requests.
+    If a task is queued, the response will contain a `202 Accepted` HTTP Status Code and a corresponding task identifier.
+  get:
+  /{task_id}:
 
-
-# Includes
+# Includes go here. These pull in DataTypes and Traits
 types: !include /types/types.raml
 traits: !include /traits/traits.raml
