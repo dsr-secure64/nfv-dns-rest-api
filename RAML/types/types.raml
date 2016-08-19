@@ -1,5 +1,21 @@
 #%RAML 1.0 Library
 
-Error: !include error.raml
-Errors: !include errors.raml
-Auth: !include auth.raml
+Error: !include /types/error.raml
+Errors: !include /types/errors.raml
+Auth: !include /types/auth.raml
+UUID: !include /types/uuid.raml
+Record: !include /types/record.raml
+TTL: !include /types/ttl.raml
+RData: !include /types/rdata.raml
+RRSet: !include /types/rrset.raml
+SysID: !include /parameters/sys_id.raml
+EMSAddress: !include /parameters/ems_address.raml
+NetconfIP: !include /parameters/netconf_ip.raml
+NetconfPort: !include /parameters/netconf_port.raml
+ExtConnectionPoints: !include /parameters/ext_connection_points.raml
+IntConnectionPoints: !include /parameters/int_connection_points.raml
+Status: !include /parameters/status.raml
+Timeout: !include /parameters/timeout.raml
+VNFCID: !include /parameters/vnfc_id.raml
+VNFCIDS: !include /parameters/vnfc_ids.raml
+Identity: !include /types/identity.raml

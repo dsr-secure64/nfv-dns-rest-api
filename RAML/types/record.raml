@@ -1,0 +1,13 @@
+#%RAML 1.0 DataType
+
+# File: types/record.raml
+
+type: object
+description: |
+  The single resource record. Resource records can be one of: `A`, `AAAA`, `MX`, `SRV`, `TXT`, `NAPTR`, `CNAME`
+properties:
+  record_type:
+    enum: [A, AAAA, MX, SRV, TXT, NAPTR, CNAME]
+  rdata: !include rdata.raml
+  ttl:
+    type: !include ttl.raml

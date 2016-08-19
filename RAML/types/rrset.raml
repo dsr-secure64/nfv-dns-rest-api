@@ -1,0 +1,10 @@
+#%RAML 1.0 DataType
+
+# File: types/rrset.raml
+# Our approach to dyanmic resource data allocation operates on an RRSets.
+# That is a set of data where each record is of the same data type.
+
+type: array
+description: |
+  An RRSet is a set of Resource Records of the same type.
+items: !include rdata.raml

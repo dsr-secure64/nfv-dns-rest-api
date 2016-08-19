@@ -1,3 +1,18 @@
 #%RAML 1.0 DataType
 
-type: !include /schemas/auth.schema
+type: object
+description: |
+  An object for authentication details that will result in an authenticatede session between EMS and the VNF.
+properties:
+  identity:
+    type: object
+    description: |
+      An object to identify a user.
+    properties:
+      methods:
+        type: array
+        description: |
+          A list that enumerates options to authenticate a user.
+        items: string
+      password:
+        type: object

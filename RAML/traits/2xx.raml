@@ -1,0 +1,15 @@
+#%RAML 1.0 Trait
+
+# File: traits/2xx.raml
+
+responses:
+  201:
+    description: "Created"
+  202:
+    description: "Accepted"
+    headers:
+      Location:
+        description: |
+          The `Location` header is where clients can find the status of the request to create a new resource.
+        example: |
+          Location: /queue/12356

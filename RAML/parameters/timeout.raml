@@ -1,0 +1,7 @@
+#%RAML 1.0 DataType
+
+type: integer
+description: |
+  Duration in seconds that the VNFM shall wait for the response. After the expiry of this duration the VNF shall send the failure response to the VNFM and clear all the configuration data. The VNF shall go back to the state it was beofre recieving the request. I.e., STARTED.
+minimum: 0
+maximum: 3600
