@@ -1,8 +1,17 @@
 #%RAML 1.0 Library
 
-2xx: !include /traits/2xx.raml
-4xx: !include /traits/4xx.raml
-filterable: !include /traits/filterable.raml
-sortable: !include /traits/sortable.raml
-limitable: !include /traits/limitable.raml
-sys_id: !include /traits/sys_id.raml
+# Common HTTP Status codes
+2xx: !include 2xx.raml
+4xx: !include 4xx.raml
+
+# These traits represent when a query parameter
+# may be used for filtering. There are also two other
+# queryParameters: "sort" and "limit" which correspond
+# to "sortable" and "limitable," respectively.
+filterable: !include filterable.raml
+sortable: !include sortable.raml
+limitable: !include limitable.raml
+sys_id_filterable: !include sys_id_filterable.raml
+ems_address_filterable: !include ems_address_filterable.raml
+netconf_ip_filterable: !include netconf_ip_filterable.raml
+status_filterable: !include status_filterable.raml

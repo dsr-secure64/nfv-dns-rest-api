@@ -8,16 +8,13 @@ responses:
     body:
       application/json:
         type: object
-        example: 
+        example:
           {
-            "errors": [
-              {
-                "userMessage": "The requested resoursce does not exist",
-                "code": 34,
-                "moreInfo": "https://www.secure64.com/blog/..."
-              }
-            ]
+            "description": "Malformed request, content must be application/json encoded",
+            "error": "Bad Request",
+            "status_code": 400
           }
+
   401:
     description: "Unauthorized"
     body:
@@ -25,11 +22,7 @@ responses:
         type: object
         example:
           {
-            "errors": [
-              {
-                "userMessage": "You are not authorized to access this resource",
-                "code": 12,
-                "moreInfo": "https://www.secure64.com/blog/..."
-              }
-            ]
+            "description": "Request does not contain an access token",
+            "error": "Authorization Required",
+            "status_code": 401
           }

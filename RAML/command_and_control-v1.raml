@@ -22,8 +22,8 @@ mediaType:  application/json
   is: [ 4xx ]
   get:
     description: |
-      GET is used to retrieve on-demand system configuration like EMS address/URL and NETCONF IP address/port. The `sys_id`, `ems_address`, `netconf_ip`, and `status` can be used for filter and sort query-string parameters.
-    is: [ limitable, sortable, sys_id ]
+      GET is used to retrieve on-demand system configuration like EMS address/URL and NETCONF IP address/port. The `sys_id`, `ems_address`, `netconf_ip`, and `status` can be used for `filter` and `sort` query-string parameters.
+    is: [ limitable, sortable, sys_id_filterable ]
     responses:
       200:
         description: |
@@ -69,7 +69,7 @@ mediaType:  application/json
       The GET operation on /api/v1.0/vnfcs is used to retrieve INS/OOS status and rsource information for all VNFCs.
     is: [ limitable, sortable]
     queryParameters:
-      vnfc_id?: !include /parameters/vnfc_id.raml
+      vnfc_id?: !include parameters/vnfc_id.raml
 
   post:
     description: |
@@ -100,7 +100,7 @@ mediaType:  application/json
       get:
       /{rrset_type}:
         get:
-        /{owner}:
+        /{label}:
           get:
           post:
             description: |
@@ -118,7 +118,10 @@ mediaType:  application/json
     If a task is queued, the response will contain a `202 Accepted` HTTP Status Code and a corresponding task identifier.
   get:
   /{task_id}:
+/auth:
+  get:
+    description: |
 
 # Includes go here. These pull in DataTypes and Traits
-types: !include /types/types.raml
-traits: !include /traits/traits.raml
+types: !include types/types.raml
+traits: !include traits/traits.raml
