@@ -1,0 +1,21 @@
+#%RAML 1.0 DataType
+
+type: object
+description: |
+  Describes a single network/interface attached to a VNFC.
+properties:
+  interface: string
+  bytes: integer
+  packets: integer
+  errs: integer
+  drop: integer
+  fifo: integer
+  frame: integer
+example:
+  interface: "eth0"
+  bytes: 52281550
+  packets: 425547
+  errs: 0
+  drop: 0
+  fifo: 0
+  frame: 0

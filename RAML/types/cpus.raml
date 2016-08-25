@@ -1,0 +1,23 @@
+#%RAML 1.0 DataType
+
+# File: cpus.raml
+
+type: object
+description: |
+  CPUs describes the CPU load of a VNFC instance.
+properties:
+  user: number
+  system: number
+  nice: number
+  idle: number
+  load_avg_1_min: number
+  load_avg_5_mins: number
+  load_avg_15_mins: number
+example:
+  user: 0.0
+  system: 0.1
+  nice: 0.0
+  idle: 99.9
+  load_avg_1_min: 0.03
+  load_avg_5_mins: 0.03
+  load_avg_15_mins: 0

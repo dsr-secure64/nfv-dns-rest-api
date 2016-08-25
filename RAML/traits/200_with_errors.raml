@@ -1,0 +1,10 @@
+#%RAML 1.0 Trait
+
+responses:
+  200:
+    body:
+      application/json:
+        description: |
+          A successful response **may not** produce a body. A `200` response **may** include user error messages.
+        properties:
+          errors?: !include ../types/errors.raml

@@ -1,0 +1,8 @@
+#%RAML 1.0 DataType
+
+type: string
+description: |
+  Mode refers to how a stop/restart operations should be handled. The two possible values are "forceful" and "graceful".
+
+  This parameter is required for `PUT /sys` requests where the operation is `"operation": "stop"`, or `"operation": "restart"`.
+enum: [ "forceful", "graceful" ]

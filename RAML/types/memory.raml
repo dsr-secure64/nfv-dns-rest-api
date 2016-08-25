@@ -1,0 +1,21 @@
+#%RAML 1.0 DataType
+
+type: object
+description: |
+  Reports statistics (in the number of bytes) about the memory of a VNFC.
+properties:
+  memTotal: integer
+  memFree: integer
+  buffers: integer
+  cached: integer
+  swap_cached: integer
+  swap_total: integer
+  swap_free: integer
+example:
+  memTotal: 3924436
+  memFree: 2505320
+  buffers: 106136
+  cached: 75768
+  swap_cached: 0
+  swap_total: 0
+  swap_free: 0

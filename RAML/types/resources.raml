@@ -1,0 +1,14 @@
+#%RAML 1.0 DataType
+
+type: object
+description: |
+  Resources is an object that describes the VNFC. It includes the `cpus` and `memory` objects, as well as lists of the `disk` and `network` objects.
+properties:
+  cpus: !include cpus.raml
+  memory: !include memory.raml
+  disks:
+    type: array
+    items: !include disk.raml
+  networks:
+    type: array
+    items: !include memory.raml

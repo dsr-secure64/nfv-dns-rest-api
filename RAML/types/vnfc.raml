@@ -1,0 +1,10 @@
+#%RAML 1.0 DataType
+
+type: object
+description: |
+  A single VNFC object.
+properties:
+  vnfc_id: !include ../parameters/vnfc_id.raml
+  status: !include ../parameters/status.raml
+  resources: !include resources.raml
+  

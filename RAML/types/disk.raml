@@ -1,0 +1,17 @@
+#%RAML 1.0 DataType
+
+type: object
+description: |
+  Describes a filesystem on a particular VNFC.
+properties:
+  filesystem: string
+  size: integer
+  used: integer
+  percent: integer
+  mounted_on: string
+example:
+  filesystem: "vgroot"
+  size: 16513960
+  used: 1593712
+  percent: 100
+  mounted_on: "/"

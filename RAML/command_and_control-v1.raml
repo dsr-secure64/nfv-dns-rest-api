@@ -23,7 +23,7 @@ mediaType:  application/json
   get:
     description: |
       GET is used to retrieve on-demand system configuration like EMS address/URL and NETCONF IP address/port. The `sys_id`, `ems_address`, `netconf_ip`, and `status` can be used for `filter` and `sort` query-string parameters.
-    is: [ limitable, sortable, sys_id_filterable ]
+    is: [ limitable, sortable, sys_id_filterable, ems_address_filterable, netconf_ip_filterable, status_filterable ]
     responses:
       200:
         description: |
@@ -34,8 +34,8 @@ mediaType:  application/json
             example: !include examples/get_sys_ret.example
   post:
     description: |
-      A VNF instance is instantiated by using REST POST API with a system definition. The system definition contains required parameters for minimum system configuration.
-    is: [ 2xx ]
+      A VNF instance is instantiated by using ReST POST API with a system definition. The system definition contains required parameters for minimum system configuration.
+    is: [ 2xx, 200_with_errors ]
     body:
       application/json:
         type: object
@@ -51,35 +51,95 @@ mediaType:  application/json
           int_connection_points: IntConnectionPoints
           ext_connection_points: ExtConnectionPoints
           status: Status
-    responses:
-      200:
-        description: |
-          A successful response **may not** produce a body.
+
   put:
     description: |
       The PUT operation is to change VNF configuration or to perform change-config/start/stop/restart the system.
+    is: [ 2xx, 200_with_errors ]
+    body:
+      application/json:
+        properties:
+          sys_id: SysID
+          operation: Operation
+          config-parameters?: ConfigParameters
+          vnfc_ids: VNFCIDS
+          int_connection_points: IntConnectionPoints
+          ext_connection_points: ExtConnectionPoints
+          stop-start-parameters?: StopRestartParameters
+
   delete:
     description: |
       The DELETE operation is to terminate the VNF instance.
+    is: [ 2xx, 200_with_errors ]
+    body:
+      application/json:
+        properties:
+          sys_id: SysID
+          mode: Mode
 /vnfcs:
   description: VNFC Instance
   is: [ 4xx ]
   get:
     description: |
-      The GET operation on /api/v1.0/vnfcs is used to retrieve INS/OOS status and rsource information for all VNFCs.
-    is: [ limitable, sortable]
-    queryParameters:
-      vnfc_id?: !include parameters/vnfc_id.raml
+      The GET operation on `/vnfcs` is used to retrieve INS/OOS status and resource information for all VNFCs. The request *may* contain a `filter` criterion that shall contain a list of parameters in which the VNFM is interested.
+
+      The `vnfc_id` and `status` may be used for `filter` and `sort` query-string parameters.
+    is: [ limitable, sortable, vnfc_id_filterable, 200_with_errors ]
+    responses:
+      200:
+        body:
+          application/json:
+            properties:
+              vnfcs: VNFC[]
 
   post:
     description: |
-
+      The POST operation on `vnfcs` is for scaling out VNFC(s) in a distributed VNF architecture.
+    is: [ 2xx, 200_with_errors ]
+    body:
+      application/json:
+        properties:
+          sys_id: SysID
+          trigger:
+            type: string
+            description: |
+              A trigger that indicates ythat VNFC(s) need to be added
+            example: "system overload"
+          number_vnfcs:
+            type: integer
+            description: |
+              The number of VNFC(s)
+          vnfcs_vdus_list: !include parameters/vnfcs_vdus_list.raml
+          timeout: Timeout
+  put:
+    description: |
+      the PUT operation onf `/vnfcs` is to start, stop, or restart all VNFCs in a distributed VNF architecture.
+    is: [ 2xx, 200_with_errors ]
+    body:
+      application/json:
+        properties:
+          operation: Operation
+  delete:
+    description: |
+      The DELETE operation onf `/vnfcs` is for scaling in VNFC(s) in a distributed VNF architecture.
+    is: [ 2xx, 200_with_errors ]
+    body:
+      application/json:
+        properties:
+          sys_id: SysID
+          vnfcs_vdus_list?: !include parameters/vnfcs_vdus_list.raml
+          mode: Mode
   /{vnfc-id}:
     description: |
       A VNFC instance as specified by `{vnfc-id}`.
-    get:
+    put:
       description: |
-        The GET operation on /api/v1.0/vnfcs/{vnfc-id} is used to retrieve INS/OOS status and resource information for a VNFC.
+        The PUT operation on `vnfcs/{vnfc-id}` is used to start, stop, or restart a specific VNFC in a distributed VNF architecture.
+      is: [ 2xx, 200_with_errors ]
+      body:
+        application/json:
+          properties:
+            operation: Operation
       responses:
 /zones:
   description: |

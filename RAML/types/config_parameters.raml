@@ -1,0 +1,13 @@
+#%RAML 1.0 DataType
+
+type: object
+description: |
+  A dictionary of configuration to change required for `change-config` operation.
+
+  This object is required for `PUT /sys` operations where `"operation": "change-config"`.
+properties:
+  ems_address?: !include ../parameters/ems_address.raml
+  netconf_ip?: !include ../parameters/netconf_ip.raml
+  netconf_port?: !include ../parameters/netconf_port.raml
+  auth?: !include ../types/auth.raml
+  timeout?: !include ../parameters/timeout.raml
