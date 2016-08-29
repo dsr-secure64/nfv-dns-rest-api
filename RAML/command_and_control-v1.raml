@@ -51,7 +51,6 @@ mediaType:  application/json
           int_connection_points: IntConnectionPoints
           ext_connection_points: ExtConnectionPoints
           status: Status
-
   put:
     description: |
       The PUT operation is to change VNF configuration or to perform change-config/start/stop/restart the system.
@@ -66,7 +65,6 @@ mediaType:  application/json
           int_connection_points: IntConnectionPoints
           ext_connection_points: ExtConnectionPoints
           stop-start-parameters?: StopRestartParameters
-
   delete:
     description: |
       The DELETE operation is to terminate the VNF instance.
@@ -91,7 +89,6 @@ mediaType:  application/json
           application/json:
             properties:
               vnfcs: VNFC[]
-
   post:
     description: |
       The POST operation on `vnfcs` is for scaling out VNFC(s) in a distributed VNF architecture.
@@ -134,37 +131,71 @@ mediaType:  application/json
       A VNFC instance as specified by `{vnfc-id}`.
     put:
       description: |
-        The PUT operation on `vnfcs/{vnfc-id}` is used to start, stop, or restart a specific VNFC in a distributed VNF architecture.
+        The PUT operation on `/vnfcs/{vnfc-id}` is used to start, stop, or restart a specific VNFC in a distributed VNF architecture.
       is: [ 2xx, 200_with_errors ]
       body:
         application/json:
           properties:
             operation: Operation
-      responses:
 /zones:
   description: |
-    Data about zones on the server.
-  is: [ 4xx ]
+    Metadata about zones in the VNF.
+
+    `vnfc_id` may be used as a filter.
+  is: [ 4xx, vnfc_id_filterable ]
   get:
     description: |
-      Get data about all zones from the server.
-  post:
-    description: |
-      Create new zone data on the server.
-  delete:
-    description: |
-      Remove zone from server.
+      Get metadata about all zones from the system, unless `vnfc_id` is specified as a filter.
   /{zone}:
+    description: |
+      Metadata about zone `zone` in the VNF, unless `vnfc_id` is specified as a filter.
     get:
+      description: |
+        Retrieve metadata about `zone` from the VNF system, unless `vnfc_id` is specified as a filter.
+    post:
+      description: |
+        Create a new (empty) zone across all VNFCs in the VNF. If `vnfc_id` is used a filter, `zone` will only be created on the filtered vnfc_ids.
+      is:  [ 200_with_errors ]
+      body:
+        application/json:
+          properties:
+            name:
+              type: string
+              enum: [ "master", "slave" ]
+            serial:
+              type: integer
+    put:
+      description: |
+        Replace `zone` with a new representation. This representation is supplied by the client in the form of a file upload.
+        As such this request takes the Content-Type `applicatoin/x-www-form-urlencoded`. Unlike the POST call to create a new and empty zone, the file representation contains all the zone data.
+      body:
+        application/x-www-form-urlencoded:
+          properties:
+            zone_file:
+              type: file
+    delete:
+      description: |
+        Delete zone across all VNFCs in the VNF. If `vnfc_id` is used a filter, `zone` will only be deleted on the filtered vnfc_ids.
+      is:  [ 200_with_errors ]
     /rrsets:
+      description: |
+        Metadata about RRsets for `zone` of all types across the entire VNF.
       get:
+        description: |
+          Retrieve metadata about RRsets for `zone` of all types across the entire VNF.
       /{rrset_type}:
+        description: |
+          RRsets of type `rrset_type` in `zone` across the entire VNF.
         get:
+          description: |
+            Retrieve metadata about RRsets for `zone` of type `rrset_type`.
         /{label}:
           get:
+            description: |
+              Retrieve all RRset data for `label` in `zone`.
           post:
             description: |
-              Create an RRSet.
+              Create an RRSet of type `rrset_type` in `zone` under `label`.
             body:
               application/json:
                 type: object
@@ -172,6 +203,9 @@ mediaType:  application/json
                   ttl: TTL
                   rdata: RRSet
                 example: {"ttl":3600,"rdata":["1.2.3.4","5.6.7.8"]}
+          delete:
+            description: |
+              Delete the RRset of type `rrset_type` for `label` in `zone`.
 /queue:
   description: |
     The `/queue` resource represents the status of Asynchronous task requests.
