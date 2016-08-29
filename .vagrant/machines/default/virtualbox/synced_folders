@@ -1,1 +1,0 @@
-{"rsync":{"/home/vagrant/sync":{"type":"rsync","guestpath":"/home/vagrant/sync","hostpath":"/var/local/LocalDisk/git/s64-rest-api","disabled":false,"owner":"vagrant","group":"vagrant"}}}
