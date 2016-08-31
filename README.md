@@ -15,9 +15,9 @@ RAML v1.0
 
 To view the project in Atom:
 
-1) Open the RAML directory
-2) Open the command_and_control-v1.raml file
-3) To see an HTML view of the model, navigate to Packages->API Workbench->Open API Console
+1. Open the RAML directory
+2. Open the command_and_control-v1.raml file
+3. To see an HTML view of the model, navigate to Packages->API Workbench->Open API Console
 
 ### Implementation Notes
 
