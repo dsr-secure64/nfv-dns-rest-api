@@ -1,0 +1,13 @@
+#%RAML 1.0 SecurityScheme
+
+type: Basic Authentication
+description: |
+  HTTP Basic Authentication. See [RFC2617](https://tools.ietf.org/html/rfc2617#section-2) for specifics.
+describedBy:
+  headers:
+    Authorization:
+      description: |
+        The word "Basic" followed by `username:password` base64 encoded.
+        I.e., "Aladdin:open sesame" base64 encoded as credentials is used in the example.
+      example:
+        Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==

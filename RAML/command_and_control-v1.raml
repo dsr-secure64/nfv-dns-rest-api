@@ -15,6 +15,8 @@ baseUriParameters:
     description: |
       The node running the Ve-VNFM API.
 mediaType:  application/json
+securedBy: [ HTTP_Basic ]
+securitySchemes: !include security/security_schemes.raml
 
 # Resources
 /sys:
@@ -215,6 +217,8 @@ mediaType:  application/json
 /auth:
   get:
     description: |
+      This resource has been added for the future feature of session-like authentication.
+      It could be JWT or something else, we don't know yet. The current implemented security scheme is HTTP Basic Authentication.
 
 # Includes go here. These pull in DataTypes and Traits
 types: !include types/types.raml

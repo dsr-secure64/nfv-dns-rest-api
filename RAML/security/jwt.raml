@@ -1,0 +1,11 @@
+#%RAML 1.0 SecurityScheme
+
+type: x-{other}
+description: |
+  JSON Web Token (JWT) are tokens for securly sharing claims between two parties.
+  See [RFC 7519](https://tools.ietf.org/html/rfc7519) for more information.
+describedBy:
+  headers:
+    Authorization:
+      example:
+        Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9.TJVA95OrM7E2cBab30RMHrHDcEfxjoYZgeFONFh7HgQ
